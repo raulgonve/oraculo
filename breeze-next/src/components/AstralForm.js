@@ -7,12 +7,15 @@ import 'react-datepicker/dist/react-datepicker.css'
 import { useChat } from 'ai/react'
 
 export default function AstrologyForm() {
-    const [birthDate, setBirthDate] = useState(null)
-    const [birthTime, setBirthTime] = useState('')
+    const [birthDate, setBirthDate] = useState(new Date('1985-07-31'))
+    const [birthTime, setBirthTime] = useState('03:45')
     const [birthPlace, setBirthPlace] = useState('')
     const [coordinates, setCoordinates] = useState(null)
     const [showResponse, setShowResponse] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
+    const [isResponseFinished, setIsResponseFinished] = useState(false) // Para mostrar botones adicionales al finalizar
+    const [audioIsLoading, setAudioIsLoading] = useState(false)
+    const [audio, setAudio] = useState(null)
     const autocompleteRef = useRef(null)
     const { messages, append, stop } = useChat({
         api: '/api/astral',
@@ -20,6 +23,11 @@ export default function AstrologyForm() {
             // Mostrar el contenedor de la respuesta cuando el streaming comienza
             setShowResponse(true)
             setIsLoading(false)
+            setIsResponseFinished(false)
+        },
+        onFinish: () => {
+            // Indicar que el streaming ha terminado
+            setIsResponseFinished(true)
         },
     })
 
@@ -40,6 +48,8 @@ export default function AstrologyForm() {
             alert('Please fill in all required fields.')
             return
         }
+        // Limpiar mensajes previos al comenzar una nueva generación
+        setAudio(null) // Limpiar audio generado anteriormente
 
         // Formatear el mensaje para el API
         const userMessage = `
@@ -57,9 +67,34 @@ export default function AstrologyForm() {
             role: 'user',
             content: userMessage,
         })
+        // Mostrar el contenedor de la respuesta
+        setShowResponse(true)
     }
 
-    // Función para formatear el contenido de la respuesta: convertir **text** en <strong>text</strong>, y los encabezados en sus correspondientes elementos HTML
+    const handleGenerateAudio = async () => {
+        if (!messages.length) return
+
+        setAudioIsLoading(true)
+        const response = await fetch('/api/audio', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: messages
+                    .filter(m => m.role === 'assistant')
+                    .map(m => m.content)
+                    .join(' '),
+            }),
+        })
+
+        const audioBlob = await response.blob()
+        const audioUrl = URL.createObjectURL(audioBlob)
+        setAudio(audioUrl)
+        setAudioIsLoading(false)
+    }
+
+    // Función para formatear el contenido de la respuesta
     const formatResponseContent = content => {
         return content.split('\n').map((line, index) => {
             if (line.startsWith('# ')) {
@@ -87,7 +122,6 @@ export default function AstrologyForm() {
                     </h3>
                 )
             } else {
-                // Formatear texto en negritas con **texto**
                 return (
                     <p key={index} className="mt-1">
                         {line.split(/(\*\*.*?\*\*)/).map((part, idx) => {
@@ -153,7 +187,10 @@ export default function AstrologyForm() {
                                 onPlaceChanged={handlePlaceChanged}>
                                 <input
                                     type="text"
-                                    placeholder="Enter place"
+                                    value={birthPlace}
+                                    onChange={e =>
+                                        setBirthPlace(e.target.value)
+                                    }
                                     className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-indigo-500"
                                 />
                             </Autocomplete>
@@ -161,7 +198,7 @@ export default function AstrologyForm() {
                         <div className="flex justify-center mt-6">
                             <button
                                 onClick={handleGenerateChart}
-                                className="w-full py-3 px-4 bg-purple-500 text-white rounded bg-gradient-to-r from-teal-400 to-blue-500 hover:from-pink-500 hover:to-orange-500 transition duration-300"
+                                className="w-full py-3 px-4 bg-purple-500 text-white rounded bg-gradient-to-r from-teal-400 to-blue-500 hover:from-pink-500 hover:to-orange-500 transition duration-300 shadow-md"
                                 disabled={isLoading}>
                                 {isLoading
                                     ? 'Generating...'
@@ -194,6 +231,44 @@ export default function AstrologyForm() {
                                     </div>
                                 ))}
                         </div>
+                        {/* Botones adicionales al finalizar la respuesta */}
+                        {isResponseFinished && (
+                            <>
+                                <div className="flex space-x-4 mt-4">
+                                    {!audioIsLoading && !audio && (
+                                        <button
+                                            className="w-full py-3 px-4 text-blue-500 border border-blue-500 rounded  bg-gradient-to-r from-white-400 to-white-500 hover:text-white hover:from-teal-400 hover:to-blue-500  transition duration-300 shadow-md"
+                                            onClick={handleGenerateAudio}>
+                                            Generate Audio
+                                        </button>
+                                    )}
+                                    <button className="w-full py-3 px-4 text-green-500 border border-green-500 rounded bg-gradient-to-r from-white-400 to-white-500 hover:text-white hover:from-green-400 hover:to-green-600  hover:text-white transition duration-300 shadow-md">
+                                        Save Chart
+                                    </button>
+                                </div>
+                                {audioIsLoading && !audio && (
+                                    <p className="mt-4 text-gray-700">
+                                        Audio is being generated...
+                                    </p>
+                                )}
+                                {audio && (
+                                    <div className="bg-gray-100 p-4 rounded-lg shadow-md w-full mt-4">
+                                        <h3 className="text-lg font-bold text-gray-800 mb-2">
+                                            Summary of Your Astrological Chart:
+                                        </h3>
+                                        <audio
+                                            controls
+                                            src={audio}
+                                            className="w-full mb-2"></audio>
+                                        <p className="text-sm text-gray-500">
+                                            Listen to the most important points
+                                            and conclusions about your
+                                            astrological chart.
+                                        </p>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 )}
             </div>
