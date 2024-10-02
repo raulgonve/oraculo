@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
-import { LoadScript, Autocomplete } from '@react-google-maps/api'
+import { Autocomplete } from '@react-google-maps/api'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { useChat } from 'ai/react'
@@ -141,137 +141,129 @@ export default function AstrologyForm() {
     }
 
     return (
-        <LoadScript
-            googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-            libraries={['places']}>
-            <div className="flex justify-center items-start h-screen p-8">
-                {/* Formulario para ingresar los datos de nacimiento */}
-                <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md border-b border-gray-200 mr-8 h-[500px]">
-                    <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-                        Enter Your Birth Details
-                    </h2>
-                    <div className="space-y-4">
-                        <div className="flex flex-col">
-                            <label className="text-sm font-semibold text-gray-600 mb-2">
-                                Date of Birth
-                            </label>
-                            <DatePicker
-                                selected={birthDate}
-                                onChange={date => setBirthDate(date)}
-                                dateFormat="yyyy/MM/dd"
-                                showYearDropdown
-                                yearDropdownItemNumber={100}
-                                scrollableYearDropdown
-                                className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-indigo-500"
-                            />
-                        </div>
-                        <div className="flex flex-col">
-                            <label className="text-sm font-semibold text-gray-600 mb-2">
-                                Time of Birth
-                            </label>
+        <div className="flex justify-center items-start p-8">
+            {/* Formulario para ingresar los datos de nacimiento */}
+            <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md border-b border-gray-200 mr-8 h-[500px]">
+                <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
+                    Enter Your Birth Details
+                </h2>
+                <div className="space-y-4">
+                    <div className="flex flex-col">
+                        <label className="text-sm font-semibold text-gray-600 mb-2">
+                            Date of Birth
+                        </label>
+                        <DatePicker
+                            selected={birthDate}
+                            onChange={date => setBirthDate(date)}
+                            dateFormat="yyyy/MM/dd"
+                            showYearDropdown
+                            yearDropdownItemNumber={100}
+                            scrollableYearDropdown
+                            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-indigo-500"
+                        />
+                    </div>
+                    <div className="flex flex-col">
+                        <label className="text-sm font-semibold text-gray-600 mb-2">
+                            Time of Birth
+                        </label>
+                        <input
+                            type="time"
+                            value={birthTime}
+                            onChange={e => setBirthTime(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-indigo-500"
+                        />
+                    </div>
+                    <div className="flex flex-col">
+                        <label className="text-sm font-semibold text-gray-600 mb-2">
+                            Place of Birth
+                        </label>
+                        <Autocomplete
+                            onLoad={autocomplete =>
+                                (autocompleteRef.current = autocomplete)
+                            }
+                            onPlaceChanged={handlePlaceChanged}>
                             <input
-                                type="time"
-                                value={birthTime}
-                                onChange={e => setBirthTime(e.target.value)}
+                                type="text"
+                                value={birthPlace}
+                                onChange={e => setBirthPlace(e.target.value)}
                                 className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-indigo-500"
                             />
-                        </div>
-                        <div className="flex flex-col">
-                            <label className="text-sm font-semibold text-gray-600 mb-2">
-                                Place of Birth
-                            </label>
-                            <Autocomplete
-                                onLoad={autocomplete =>
-                                    (autocompleteRef.current = autocomplete)
-                                }
-                                onPlaceChanged={handlePlaceChanged}>
-                                <input
-                                    type="text"
-                                    value={birthPlace}
-                                    onChange={e =>
-                                        setBirthPlace(e.target.value)
-                                    }
-                                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-indigo-500"
-                                />
-                            </Autocomplete>
-                        </div>
-                        <div className="flex justify-center mt-6">
-                            <button
-                                onClick={handleGenerateChart}
-                                className="w-full py-3 px-4 bg-purple-500 text-white rounded bg-gradient-to-r from-teal-400 to-blue-500 hover:from-pink-500 hover:to-orange-500 transition duration-300 shadow-md"
-                                disabled={isLoading}>
-                                {isLoading
-                                    ? 'Generating...'
-                                    : 'Generate Basic Astrological Data'}
-                            </button>
-                        </div>
+                        </Autocomplete>
+                    </div>
+                    <div className="flex justify-center mt-6">
+                        <button
+                            onClick={handleGenerateChart}
+                            className="w-full py-3 px-4 bg-purple-500 text-white rounded bg-gradient-to-r from-teal-400 to-blue-500 hover:from-pink-500 hover:to-orange-500 transition duration-300 shadow-md"
+                            disabled={isLoading}>
+                            {isLoading
+                                ? 'Generating...'
+                                : 'Generate Basic Astrological Data'}
+                        </button>
                     </div>
                 </div>
-                {/* Contenedor para mostrar la respuesta de la API */}
-                {showResponse && (
-                    <div className="bg-white p-8 rounded-lg shadow-md border-b border-gray-200 w-full max-w-md ml-8 overflow-y-auto h-[500px]">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-                                Astrological Chart Data:
-                            </h2>
-                            <button
-                                onClick={stop}
-                                className="text-red-500 border border-red-500 px-3 py-1 rounded hover:bg-red-500 hover:text-white transition duration-300">
-                                Stop
-                            </button>
-                        </div>
-                        <div className="space-y-2">
-                            {messages
-                                .filter(m => m.role === 'assistant') // Filtrar solo los mensajes del asistente
-                                .map((m, index) => (
-                                    <div
-                                        key={m.id}
-                                        className="whitespace-pre-wrap">
-                                        {formatResponseContent(m.content)}
-                                    </div>
-                                ))}
-                        </div>
-                        {/* Botones adicionales al finalizar la respuesta */}
-                        {isResponseFinished && (
-                            <>
-                                <div className="flex space-x-4 mt-4">
-                                    {!audioIsLoading && !audio && (
-                                        <button
-                                            className="w-full py-3 px-4 text-blue-500 border border-blue-500 rounded  bg-gradient-to-r from-white-400 to-white-500 hover:text-white hover:from-teal-400 hover:to-blue-500  transition duration-300 shadow-md"
-                                            onClick={handleGenerateAudio}>
-                                            Generate Audio
-                                        </button>
-                                    )}
-                                    <button className="w-full py-3 px-4 text-green-500 border border-green-500 rounded bg-gradient-to-r from-white-400 to-white-500 hover:text-white hover:from-green-400 hover:to-green-600  hover:text-white transition duration-300 shadow-md">
-                                        Save Chart
-                                    </button>
-                                </div>
-                                {audioIsLoading && !audio && (
-                                    <p className="mt-4 text-gray-700">
-                                        Audio is being generated...
-                                    </p>
-                                )}
-                                {audio && (
-                                    <div className="bg-gray-100 p-4 rounded-lg shadow-md w-full mt-4">
-                                        <h3 className="text-lg font-bold text-gray-800 mb-2">
-                                            Summary of Your Astrological Chart:
-                                        </h3>
-                                        <audio
-                                            controls
-                                            src={audio}
-                                            className="w-full mb-2"></audio>
-                                        <p className="text-sm text-gray-500">
-                                            Listen to the most important points
-                                            and conclusions about your
-                                            astrological chart.
-                                        </p>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-                )}
             </div>
-        </LoadScript>
+            {/* Contenedor para mostrar la respuesta de la API */}
+            {showResponse && (
+                <div className="bg-white p-8 rounded-lg shadow-md border-b border-gray-200 w-full max-w-md ml-8 overflow-y-auto h-[500px]">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
+                            Astrological Chart Data:
+                        </h2>
+                        <button
+                            onClick={stop}
+                            className="text-red-500 border border-red-500 px-3 py-1 rounded hover:bg-red-500 hover:text-white transition duration-300">
+                            Stop
+                        </button>
+                    </div>
+                    <div className="space-y-2">
+                        {messages
+                            .filter(m => m.role === 'assistant') // Filtrar solo los mensajes del asistente
+                            .map((m, index) => (
+                                <div key={m.id} className="whitespace-pre-wrap">
+                                    {formatResponseContent(m.content)}
+                                </div>
+                            ))}
+                    </div>
+                    {/* Botones adicionales al finalizar la respuesta */}
+                    {isResponseFinished && (
+                        <>
+                            <div className="flex space-x-4 mt-4">
+                                {!audioIsLoading && !audio && (
+                                    <button
+                                        className="w-full py-3 px-4 text-blue-500 border border-blue-500 rounded  bg-gradient-to-r from-white-400 to-white-500 hover:text-white hover:from-teal-400 hover:to-blue-500  transition duration-300 shadow-md"
+                                        onClick={handleGenerateAudio}>
+                                        Generate Audio
+                                    </button>
+                                )}
+                                <button className="w-full py-3 px-4 text-green-500 border border-green-500 rounded bg-gradient-to-r from-white-400 to-white-500 hover:text-white hover:from-green-400 hover:to-green-600  hover:text-white transition duration-300 shadow-md">
+                                    Save Chart
+                                </button>
+                            </div>
+                            {audioIsLoading && !audio && (
+                                <p className="mt-4 text-gray-700">
+                                    Audio is being generated...
+                                </p>
+                            )}
+                            {audio && (
+                                <div className="bg-gray-100 p-4 rounded-lg shadow-md w-full mt-4">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-2">
+                                        Summary of Your Astrological Chart:
+                                    </h3>
+                                    <audio
+                                        controls
+                                        src={audio}
+                                        className="w-full mb-2"></audio>
+                                    <p className="text-sm text-gray-500">
+                                        Listen to the most important points and
+                                        conclusions about your astrological
+                                        chart.
+                                    </p>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            )}
+        </div>
     )
 }

@@ -12,29 +12,42 @@ import { useState } from 'react'
 
 const Navigation = ({ user }) => {
     const { logout } = useAuth()
-
     const [open, setOpen] = useState(false)
+    const pathname = usePathname()
 
     return (
         <nav className="bg-white border-b border-gray-100">
             {/* Primary Navigation Menu */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16">
-                    <div className="flex">
+                <div className="flex justify-between h-16 items-center">
+                    <div className="flex items-center">
                         {/* Logo */}
-                        <div className="flex-shrink-0 flex items-center">
+                        <div className="flex-shrink-0">
                             <Link href="/dashboard">
                                 <ApplicationLogo className="block h-10 w-auto fill-current text-gray-600" />
                             </Link>
                         </div>
 
                         {/* Navigation Links */}
-                        <div className="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
-                            <NavLink
-                                href="/dashboard"
-                                active={usePathname() === '/dashboard'}>
-                                Dashboard
-                            </NavLink>
+                        <div className="hidden sm:flex space-x-8 ml-10">
+                            {[
+                                { href: '/dashboard', label: 'Dashboard' },
+                                {
+                                    href: '/astral',
+                                    label: 'Astral Chart',
+                                },
+                                { href: '/astrobot', label: 'AstroBot' },
+                                { href: '/horoscope', label: 'Horóscopo' },
+                                { href: '/images', label: 'Images' },
+                            ].map(link => (
+                                <NavLink
+                                    key={link.href}
+                                    href={link.href}
+                                    active={pathname === link.href}
+                                    className="text-gray-600 font-medium transition duration-150 ease-in-out">
+                                    {link.label}
+                                </NavLink>
+                            ))}
                         </div>
                     </div>
 
@@ -44,9 +57,8 @@ const Navigation = ({ user }) => {
                             align="right"
                             width="48"
                             trigger={
-                                <button className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none transition duration-150 ease-in-out">
+                                <button className="flex items-center text-sm font-medium text-gray-500 hover:text-indigo-500 focus:outline-none transition duration-150 ease-in-out">
                                     <div>{user?.name}</div>
-
                                     <div className="ml-1">
                                         <svg
                                             className="fill-current h-4 w-4"
@@ -68,11 +80,11 @@ const Navigation = ({ user }) => {
                         </Dropdown>
                     </div>
 
-                    {/* Hamburger */}
+                    {/* Hamburger Menu for Mobile */}
                     <div className="-mr-2 flex items-center sm:hidden">
                         <button
-                            onClick={() => setOpen(open => !open)}
-                            className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
+                            onClick={() => setOpen(prev => !prev)}
+                            className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none transition duration-150 ease-in-out">
                             <svg
                                 className="h-6 w-6"
                                 stroke="currentColor"
@@ -103,13 +115,22 @@ const Navigation = ({ user }) => {
 
             {/* Responsive Navigation Menu */}
             {open && (
-                <div className="block sm:hidden">
+                <div className="sm:hidden">
                     <div className="pt-2 pb-3 space-y-1">
-                        <ResponsiveNavLink
-                            href="/dashboard"
-                            active={usePathname() === '/dashboard'}>
-                            Dashboard
-                        </ResponsiveNavLink>
+                        {[
+                            { href: '/dashboard', label: 'Dashboard' },
+                            { href: '/astral', label: 'Astral Chart' },
+                            { href: '/astrobot', label: 'AstroBot' },
+                            { href: '/horoscope', label: 'Horóscopo' },
+                            { href: '/images', label: 'Images' },
+                        ].map(link => (
+                            <ResponsiveNavLink
+                                key={link.href}
+                                href={link.href}
+                                active={pathname === link.href}>
+                                {link.label}
+                            </ResponsiveNavLink>
+                        ))}
                     </div>
 
                     {/* Responsive Settings Options */}
