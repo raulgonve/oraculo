@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('element_name');
-            $table->string('description');
+            $table->text('description');
             $table->string('element_type'); // "advanced" or "astral"
-            $table->string('meaning')->nullable(); // Campo adicional para el significado de la descripción
+            $table->text('meaning')->nullable(); // Campo adicional para el significado de la descripción
             $table->timestamps();
         });
     }

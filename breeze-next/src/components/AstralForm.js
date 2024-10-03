@@ -5,8 +5,10 @@ import { Autocomplete } from '@react-google-maps/api'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { useChat } from 'ai/react'
+import { toast, ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
-export default function AstrologyForm() {
+export default function AstrologyForm({ user }) {
     const [birthDate, setBirthDate] = useState(new Date('1985-07-31'))
     const [birthTime, setBirthTime] = useState('03:45')
     const [birthPlace, setBirthPlace] = useState('')
@@ -15,6 +17,7 @@ export default function AstrologyForm() {
     const [isLoading, setIsLoading] = useState(false)
     const [isResponseFinished, setIsResponseFinished] = useState(false) // Para mostrar botones adicionales al finalizar
     const [audioIsLoading, setAudioIsLoading] = useState(false)
+    const [isSavingChart, setIsSavingChart] = useState(false)
     const [audio, setAudio] = useState(null)
     const autocompleteRef = useRef(null)
     const { messages, append, stop } = useChat({
@@ -40,6 +43,15 @@ export default function AstrologyForm() {
             setBirthPlace(name)
             setCoordinates({ name, latitude: lat, longitude: lng })
         }
+    }
+    const fetchCsrfToken = async () => {
+        await fetch(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/sanctum/csrf-cookie`,
+            {
+                method: 'GET',
+                credentials: 'include',
+            },
+        )
     }
 
     const handleGenerateChart = async e => {
@@ -140,8 +152,74 @@ export default function AstrologyForm() {
         })
     }
 
+    const handleSaveChart = async () => {
+        setIsSavingChart(true)
+        try {
+            const response = await fetch('/api/chart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_name: user.name,
+                    birth_date: birthDate,
+                    birth_time: birthTime,
+                    birth_place: birthPlace,
+                    astrological_chart: messages, // Mensajes con la carta astral
+                    audio_summary: audio, // Resumen del audio generado
+                }),
+            })
+
+            if (response.ok) {
+                const jsonResponse = await response.json()
+                const content = jsonResponse.data
+
+                // Obtener el token CSRF antes de hacer la solicitud
+                await fetchCsrfToken()
+
+                // Enviar los datos extraídos al controlador de Laravel
+                const resp = await fetch(
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/elements`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-XSRF-TOKEN': decodeURIComponent(
+                                getCookie('XSRF-TOKEN'),
+                            ), // Incluir el token CSRF
+                        },
+                        body: JSON.stringify({
+                            birth_date: birthDate,
+                            birth_time: birthTime,
+                            birth_place: birthPlace,
+                            astrals: content.astral,
+                            advance: content.advance,
+                            aspects: content.aspects,
+                        }),
+                        credentials: 'include', // Incluir credenciales para enviar cookies
+                    },
+                )
+                if (resp.ok) {
+                    toast.success(
+                        'Elements and aspects created successfully! 🚀',
+                    )
+                } else {
+                    toast.error('Failed to save the chart. Please try again.🚨')
+                }
+            } else {
+                toast.error('Failed to save the chart. Please try again.🚨')
+                console.error('Failed to save chart:', await response.text())
+            }
+            setIsSavingChart(false)
+        } catch (error) {
+            console.error('Error saving chart:', error)
+            setIsSavingChart(false)
+        }
+    }
+
     return (
         <div className="flex justify-center items-start p-8">
+            <ToastContainer />
             {/* Formulario para ingresar los datos de nacimiento */}
             <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md border-b border-gray-200 mr-8 h-[500px]">
                 <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
@@ -235,13 +313,27 @@ export default function AstrologyForm() {
                                         Generate Audio
                                     </button>
                                 )}
-                                <button className="w-full py-3 px-4 text-green-500 border border-green-500 rounded bg-gradient-to-r from-white-400 to-white-500 hover:text-white hover:from-green-400 hover:to-green-600  hover:text-white transition duration-300 shadow-md">
-                                    Save Chart
+                                <button
+                                    className={`w-full py-3 px-4 rounded bg-gradient-to-r from-white-400 to-white-500 hover:text-white transition duration-300 shadow-md ${
+                                        isSavingChart
+                                            ? 'text-gray-500 border border-gray-500 cursor-not-allowed'
+                                            : 'text-green-500 border border-green-500 hover:from-green-400 hover:to-green-600 hover:text-white'
+                                    }`}
+                                    onClick={handleSaveChart}
+                                    disabled={isSavingChart}>
+                                    {isSavingChart
+                                        ? 'Saving Chart...'
+                                        : 'Save Chart'}
                                 </button>
                             </div>
                             {audioIsLoading && !audio && (
                                 <p className="mt-4 text-gray-700">
                                     Audio is being generated...
+                                </p>
+                            )}
+                            {isSavingChart && (
+                                <p className="mt-4 text-gray-700">
+                                    Saving chart...
                                 </p>
                             )}
                             {audio && (
@@ -266,4 +358,16 @@ export default function AstrologyForm() {
             )}
         </div>
     )
+}
+// Utility function to get a cookie by name
+function getCookie(name) {
+    const value = `; ${document.cookie}`
+    const parts = value.split(`; ${name}=`)
+    if (parts.length === 2) {
+        const lastPart = parts.pop() // Puede ser undefined
+        if (lastPart) {
+            return lastPart.split(';').shift() || ''
+        }
+    }
+    return '' // Retornar una cadena vacía si la cookie no está presente
 }
