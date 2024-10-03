@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ElementController;
+use App\Http\Controllers\AspectController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,3 +21,5 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 });
 
 Route::post('/elements', [ElementController::class, 'store']);
+Route::get('/get-elements', [ElementController::class, 'index']);
+Route::get('/get-aspects', [AspectController::class, 'index']);
