@@ -40,8 +40,8 @@ export async function POST(req: Request) {
             )
         }
 
-        console.log('Birth Date:', birthDate)
-        console.log('Birth Time:', birthTime)
+        console.log('Birth Date:', birthDate) // Formato: AAAA-MM-DD
+        console.log('Birth Time:', birthTime) // Formato: HH:MM AM/PM
         console.log('Birth Place:', birthPlace)
 
         // Crear el prompt basado en la información astrológica

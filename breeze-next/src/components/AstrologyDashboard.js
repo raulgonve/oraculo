@@ -187,7 +187,9 @@ const AstrologyDashboard = () => {
                             </h2>
                         </div>
                         <p className="text-gray-600 mb-2">
-                            {getHouseNumber()} - {element.description}
+                            <h3 className="text-xl font-semibold text-gray-500 text-center">
+                                {element.description}
+                            </h3>
                         </p>
                         {/* Meaning displayed on hover */}
                         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg p-4 text-gray-800">
@@ -217,7 +219,9 @@ const AstrologyDashboard = () => {
                             </h2>
                         </div>
                         <p className="text-gray-600 mb-2 text-center">
-                            {getHouseNumber()} - {element.description}
+                            <h3 className="text-xl font-semibold text-gray-500 text-center">
+                                {element.description}
+                            </h3>
                         </p>
                         {/* Meaning displayed on hover */}
                         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg p-4 text-gray-800">

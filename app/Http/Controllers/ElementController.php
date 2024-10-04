@@ -66,7 +66,7 @@ class ElementController extends Controller
             if ($user) {
                 $user->birth_date = Carbon::parse($request->birth_date)->format('Y-m-d');
                 $user->birth_place = $request->birth_place;
-                $user->birth_time = $request->birth_time;
+                $user->birth_time = Carbon::createFromFormat('g:i A', $request->birth_time)->format('H:i:s');
                 $user->save();
             }
 

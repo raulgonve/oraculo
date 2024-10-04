@@ -20,6 +20,9 @@ export default function AstrologyForm({ user }) {
     const [isSavingChart, setIsSavingChart] = useState(false)
     const [audio, setAudio] = useState(null)
     const autocompleteRef = useRef(null)
+    const [latitude, setLatitude] = useState(null)
+    const [longitude, setLongitude] = useState(null)
+    const [cityAndCountry, setCityAndCountry] = useState('')
     const { messages, append, stop } = useChat({
         api: '/api/astral',
         onResponse: () => {
@@ -35,15 +38,44 @@ export default function AstrologyForm({ user }) {
     })
 
     const handlePlaceChanged = () => {
-        const place = autocompleteRef.current.getPlace()
-        if (place.geometry) {
-            const lat = place.geometry.location.lat()
-            const lng = place.geometry.location.lng()
-            const name = `${place.address_components[0].long_name}, ${place.address_components[place.address_components.length - 1].long_name}`
-            setBirthPlace(name)
-            setCoordinates({ name, latitude: lat, longitude: lng })
+        if (autocompleteRef.current) {
+            const place = autocompleteRef.current.getPlace()
+
+            // Obtiene la latitud y longitud del lugar seleccionado
+            if (place.geometry) {
+                const lat = place.geometry.location.lat()
+                const lng = place.geometry.location.lng()
+                setLatitude(lat)
+                setLongitude(lng)
+                setCoordinates({ lat, lng })
+            }
+
+            // Extraer la ciudad y el país del lugar seleccionado
+            const addressComponents = place.address_components
+            let city = ''
+            let country = ''
+
+            addressComponents.forEach(component => {
+                if (
+                    component.types.includes('locality') ||
+                    component.types.includes('administrative_area_level_1')
+                ) {
+                    city = component.long_name
+                } else if (component.types.includes('country')) {
+                    country = component.long_name
+                }
+            })
+
+            if (city && country) {
+                const formattedPlace = `${city}, ${country}`
+                setBirthPlace(formattedPlace)
+                setCityAndCountry(formattedPlace)
+            } else {
+                setCityAndCountry('') // Si no se puede determinar, establecer como vacío
+            }
         }
     }
+
     const fetchCsrfToken = async () => {
         await fetch(
             `${process.env.NEXT_PUBLIC_BACKEND_URL}/sanctum/csrf-cookie`,
@@ -56,19 +88,26 @@ export default function AstrologyForm({ user }) {
 
     const handleGenerateChart = async e => {
         e.preventDefault()
-        if (!birthDate || !birthTime || !coordinates) {
-            alert('Please fill in all required fields.')
+
+        // Validar que todos los campos estén presentes
+        if (!birthDate || !birthTime || !coordinates || !cityAndCountry) {
+            toast.error('Please fill in all required fields!🚨')
             return
         }
-        // Limpiar mensajes previos al comenzar una nueva generación
-        setAudio(null) // Limpiar audio generado anteriormente
+        const { formattedDate, formattedTime } = formatBirthDetails(
+            birthDate,
+            birthTime,
+        )
 
-        // Formatear el mensaje para el API
+        // Limpiar mensajes previos al comenzar una nueva generación
+        setAudio(null)
+
+        // Formatear el mensaje para la API
         const userMessage = `
         {
-            "birthDate": "${birthDate}",
-            "birthTime": "${birthTime}",
-            "birthPlace": "${coordinates.name}"
+            "birthDate": "${formattedDate}",
+            "birthTime": "${formattedTime}",
+            "birthPlace": "${cityAndCountry}, ${coordinates.lat}, ${coordinates.lng}"
         }`
 
         // Mostrar el botón en estado "loading"
@@ -79,7 +118,7 @@ export default function AstrologyForm({ user }) {
             role: 'user',
             content: userMessage,
         })
-        // Mostrar el contenedor de la respuesta
+
         setShowResponse(true)
     }
 
@@ -106,7 +145,6 @@ export default function AstrologyForm({ user }) {
         setAudioIsLoading(false)
     }
 
-    // Función para formatear el contenido de la respuesta
     const formatResponseContent = content => {
         return content.split('\n').map((line, index) => {
             if (line.startsWith('# ')) {
@@ -152,9 +190,30 @@ export default function AstrologyForm({ user }) {
         })
     }
 
+    const formatBirthDetails = (birthDate, birthTime) => {
+        // Convert birthDate to "YYYY-MM-DD" (ISO 8601)
+        const originalDate = new Date(birthDate)
+        const formattedDate = originalDate.toISOString().split('T')[0]
+
+        // Convert birthTime to 12-hour format with AM/PM
+        const timeParts = birthTime.split(':')
+        let hours = parseInt(timeParts[0])
+        const minutes = timeParts[1]
+        const ampm = hours >= 12 ? 'PM' : 'AM'
+        hours = hours % 12 || 12
+
+        const formattedTime = `${hours}:${minutes} ${ampm}`
+
+        return { formattedDate, formattedTime }
+    }
+
     const handleSaveChart = async () => {
         setIsSavingChart(true)
         try {
+            const { formattedDate, formattedTime } = formatBirthDetails(
+                birthDate,
+                birthTime,
+            )
             const response = await fetch('/api/chart', {
                 method: 'POST',
                 headers: {
@@ -162,8 +221,8 @@ export default function AstrologyForm({ user }) {
                 },
                 body: JSON.stringify({
                     user_name: user.name,
-                    birth_date: birthDate,
-                    birth_time: birthTime,
+                    birth_date: formattedDate,
+                    birth_time: formattedTime,
                     birth_place: birthPlace,
                     astrological_chart: messages, // Mensajes con la carta astral
                     audio_summary: audio, // Resumen del audio generado
@@ -189,8 +248,8 @@ export default function AstrologyForm({ user }) {
                             ), // Incluir el token CSRF
                         },
                         body: JSON.stringify({
-                            birth_date: birthDate,
-                            birth_time: birthTime,
+                            birth_date: formattedDate,
+                            birth_time: formattedTime,
                             birth_place: birthPlace,
                             astrals: content.astral,
                             advance: content.advance,
@@ -216,7 +275,6 @@ export default function AstrologyForm({ user }) {
             setIsSavingChart(false)
         }
     }
-
     return (
         <div className="flex justify-center items-start p-8">
             <ToastContainer />
@@ -255,18 +313,30 @@ export default function AstrologyForm({ user }) {
                         <label className="text-sm font-semibold text-gray-600 mb-2">
                             Place of Birth
                         </label>
-                        <Autocomplete
-                            onLoad={autocomplete =>
-                                (autocompleteRef.current = autocomplete)
-                            }
-                            onPlaceChanged={handlePlaceChanged}>
-                            <input
-                                type="text"
-                                value={birthPlace}
-                                onChange={e => setBirthPlace(e.target.value)}
-                                className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-indigo-500"
-                            />
-                        </Autocomplete>
+                        <div className="w-full">
+                            <Autocomplete
+                                onLoad={autocomplete =>
+                                    (autocompleteRef.current = autocomplete)
+                                }
+                                onPlaceChanged={handlePlaceChanged}>
+                                <input
+                                    type="text"
+                                    value={birthPlace}
+                                    onChange={e =>
+                                        setBirthPlace(e.target.value)
+                                    }
+                                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-indigo-500"
+                                />
+                            </Autocomplete>
+
+                            {/* Mostrar las coordenadas solo si están disponibles */}
+                            {coordinates && (
+                                <div className="mt-2 text-gray-600">
+                                    <p>Latitude: {coordinates.lat}</p>
+                                    <p>Longitude: {coordinates.lng}</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <div className="flex justify-center mt-6">
                         <button
