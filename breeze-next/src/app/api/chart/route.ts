@@ -28,7 +28,7 @@ export async function POST(req) {
             You are an astrology expert. Given the following astrological chart text, extract the data as "Element" or "Aspect".
             For each astral, provide the name, description (value of the astral element), type (Astral), and an interpretation of the meaning.
             For each advance, provide the name, description (value of the advanced element), type (Advanced), and an interpretation of the meaning.
-            For each aspect, provide the type of aspect, involved planets(as an array of planets), and an interpretation of the meaning.
+            For each aspect, provide the name, provide the aspect type (how the planets influence each other), involved planets(as an array of planets), and an interpretation of the meaning.
             If any main aspect, astral element, or advanced element is missing, calculate or get it using the existing data (birth date: ${birth_date}, time of birth: ${birth_time} and birth place: ${birth_place}).
 
             The data required are:
@@ -59,7 +59,7 @@ export async function POST(req) {
         })
 
         const contentString = response.choices[0].message?.content?.trim() ?? ''
-
+        console.log(contentString)
         // Buscar y extraer el contenido JSON que está entre {}
         const jsonMatch = contentString.match(/{[\s\S]*}/)
         if (!jsonMatch) {

@@ -77,7 +77,16 @@ class ElementController extends Controller
                     ->where('element_name', $element['element_name'])
                     ->first();
 
-                if (!$existingElement) {
+                if ($existingElement) {
+                    // Si el elemento existe, actualizar los campos
+                    $existingElement->update([
+                        'description' => $element['description'],
+                        'element_type' => $element['element_type'],
+                        'meaning' => $element['meaning'],
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    // Si el elemento no existe, crear uno nuevo
                     $elementsData[] = [
                         'user_id' => $userId,
                         'element_name' => $element['element_name'],
@@ -89,26 +98,47 @@ class ElementController extends Controller
                     ];
                 }
             }
-            Element::insert($elementsData);
+
+            // Insertar los nuevos elementos (si hay alguno)
+            if (!empty($elementsData)) {
+                Element::insert($elementsData);
+            }
+
 
             // Guardar aspectos principales en la tabla 'principal_aspects'
             $aspectsData = [];
             foreach ($request->aspects as $aspect) {
-                $existingAspect = Aspect::where('user_id', $userId)->where('aspect',$aspect['aspect'])->first();
-                if (!$existingAspect){
+                $existingAspect = Aspect::where('user_id', $userId)
+                    ->where('aspect', $aspect['aspect'])
+                    ->first();
+
+                if ($existingAspect) {
+                    // Si el aspecto existe, actualizar los campos
+                    $existingAspect->update([
+                        'involved_planets' => implode(', ', $aspect['involved_planets']),
+                        'aspect_type' => $aspect['aspect_type'],
+                        'meaning' => $aspect['meaning'],
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    // Si el aspecto no existe, agregar a los datos para insertar
                     $aspectsData[] = [
-                    'user_id' => $userId,
-                    'aspect' => $aspect['aspect'],
-                    'involved_planets' => implode(', ', $aspect['involved_planets']),
-                    'aspect_type' => $aspect['aspect_type'],
-                    'meaning' => $aspect['meaning'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
+                        'user_id' => $userId,
+                        'aspect' => $aspect['aspect'],
+                        'involved_planets' => implode(', ', $aspect['involved_planets']),
+                        'aspect_type' => $aspect['aspect_type'],
+                        'meaning' => $aspect['meaning'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
                 }
-                
             }
-            Aspect::insert($aspectsData);
+
+            // Insertar los nuevos aspectos (si hay alguno)
+            if (!empty($aspectsData)) {
+                Aspect::insert($aspectsData);
+            }
+
 
             // Hacer commit si no hubo errores
             DB::commit();

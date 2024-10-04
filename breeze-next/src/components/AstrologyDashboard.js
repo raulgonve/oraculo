@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 import { useEffect, useState } from 'react'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -10,7 +11,12 @@ import {
     TbZodiacCancer,
     TbZodiacLibra,
     TbZodiacVirgo,
-    TbZodiacCapricorn, // Icono para elementos avanzados
+    TbZodiacCapricorn,
+    TbZodiacPisces,
+    TbZodiacAries,
+    TbZodiacScorpio,
+    TbZodiacAquarius,
+    TbPlanet,
 } from 'react-icons/tb'
 
 const AstrologyDashboard = () => {
@@ -92,29 +98,69 @@ const AstrologyDashboard = () => {
         return <p className="text-center text-lg">Loading...</p>
     }
 
-    const getZodiacIcon = elementName => {
-        switch (elementName) {
-            case 'Sun Sign':
-                return <TbZodiacLeo className="text-yellow-500 text-4xl" />
-            case 'Ascendent':
-                return (
-                    <TbZodiacSagittarius className="text-purple-500 text-4xl" />
-                )
-            case 'Moon':
-                return <TbZodiacTaurus className="text-blue-500 text-4xl" />
-            case 'Mercury':
-                return <TbZodiacGemini className="text-green-500 text-4xl" />
-            case 'Venus':
-                return <TbZodiacVirgo className="text-pink-500 text-4xl" />
-            case 'Mars':
-                return <TbZodiacCancer className="text-red-500 text-4xl" />
-            default:
-                return <TbZodiacLibra className="text-indigo-500 text-4xl" />
-        }
+    const zodiacIcons = {
+        Aries: <TbZodiacAries />,
+        Taurus: <TbZodiacTaurus />,
+        Gemini: <TbZodiacGemini />,
+        Cancer: <TbZodiacCancer />,
+        Leo: <TbZodiacLeo />,
+        Virgo: <TbZodiacVirgo />,
+        Libra: <TbZodiacLibra />,
+        Scorpio: <TbZodiacScorpio />,
+        Sagittarius: <TbZodiacSagittarius />,
+        Capricorn: <TbZodiacCapricorn />,
+        Aquarius: <TbZodiacAquarius />,
+        Pisces: <TbZodiacPisces />,
     }
 
-    const getAdvancedIcon = () => {
-        return <TbZodiacCapricorn className="text-gray-500 text-4xl" />
+    const getRandomColorClass = () => {
+        const colors = [
+            'text-red-500',
+            'text-green-500',
+            'text-blue-500',
+            'text-yellow-500',
+            'text-purple-500',
+            'text-indigo-500',
+            'text-pink-500',
+        ]
+        return colors[Math.floor(Math.random() * colors.length)]
+    }
+
+    const getZodiacIcon = description => {
+        const sign = Object.keys(zodiacIcons).find(key =>
+            description.toLowerCase().includes(key.toLowerCase()),
+        )
+        if (sign) {
+            return React.cloneElement(zodiacIcons[sign], {
+                className: `${getRandomColorClass()} text-4xl`,
+            })
+        }
+        return (
+            <TbZodiacLibra
+                className={`${getRandomColorClass()} text-4xl`} // Default icon with random color
+            />
+        )
+    }
+
+    const getHouseNumber = () => {
+        const houseNumbers = [
+            '1st House',
+            '2nd House',
+            '3rd House',
+            '4th House',
+            '5th House',
+            '6th House',
+            '7th House',
+            '8th House',
+            '9th House',
+            '10th House',
+            '11th House',
+            '12th House',
+        ]
+        return houseNumbers[Math.floor(Math.random() * houseNumbers.length)]
+    }
+    if (astralElements.length === 0) {
+        return <p className="text-center text-lg">Welcome to Oraculo AI!</p>
     }
 
     return (
@@ -134,18 +180,18 @@ const AstrologyDashboard = () => {
                         className="bg-white shadow-lg rounded-lg p-6 transform transition duration-500 hover:scale-105 relative group">
                         <div className="flex items-center mb-4">
                             <div className="mr-4">
-                                {getZodiacIcon(element.element_name)}
+                                {getZodiacIcon(element.description)}
                             </div>
                             <h2 className="text-2xl font-semibold text-gray-800">
                                 {element.element_name}
                             </h2>
                         </div>
                         <p className="text-gray-600 mb-2">
-                            <strong>Description:</strong> {element.description}
+                            {getHouseNumber()} - {element.description}
                         </p>
                         {/* Meaning displayed on hover */}
                         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg p-4 text-gray-800">
-                            <p className="text-center">
+                            <p className="text-center bg-white shadow-md">
                                 <strong>Meaning:</strong> {element.meaning}
                             </p>
                         </div>
@@ -163,17 +209,19 @@ const AstrologyDashboard = () => {
                         key={index}
                         className="bg-white shadow-lg rounded-lg p-6 transform transition duration-500 hover:scale-105 relative group">
                         <div className="flex items-center mb-4">
-                            <div className="mr-4">{getAdvancedIcon()}</div>
+                            <div className="mr-4">
+                                {getZodiacIcon(element.description)}
+                            </div>
                             <h2 className="text-2xl font-semibold text-gray-800">
                                 {element.element_name}
                             </h2>
                         </div>
-                        <p className="text-gray-600 mb-2">
-                            <strong>Description:</strong> {element.description}
+                        <p className="text-gray-600 mb-2 text-center">
+                            {getHouseNumber()} - {element.description}
                         </p>
                         {/* Meaning displayed on hover */}
                         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg p-4 text-gray-800">
-                            <p className="text-center">
+                            <p className="text-center bg-white shadow-md">
                                 <strong>Meaning:</strong> {element.meaning}
                             </p>
                         </div>
@@ -191,23 +239,31 @@ const AstrologyDashboard = () => {
                         key={index}
                         className="bg-white shadow-lg rounded-lg p-6 transform transition duration-500 hover:scale-105 relative group">
                         <div className="flex items-center mb-4">
-                            <TbZodiacLibra className="text-indigo-500 text-4xl mr-4" />
+                            <TbPlanet
+                                className={`${getRandomColorClass()} text-4xl mr-4`}
+                            />
                             <h2 className="text-2xl font-semibold text-gray-800">
                                 {aspect.aspect}
                             </h2>
                         </div>
-                        <p className="text-gray-600 mb-2">
-                            <strong>Involved Planets:</strong>{' '}
+                        <p className="text-gray-600 mb-2 text-center">
+                            <strong className="border-b-2 border-gray-300">
+                                Involved Planets
+                            </strong>{' '}
+                            <br></br>{' '}
                             {Array.isArray(aspect.involved_planets)
                                 ? aspect.involved_planets.join(', ')
-                                : 'N/A'}
+                                : aspect.involved_planets}
                         </p>
-                        <p className="text-gray-600 mb-2">
-                            <strong>Aspect Type:</strong> {aspect.aspect_type}
+                        <p className="text-gray-600 mb-2 text-center">
+                            <strong className="border-b-2 border-gray-300">
+                                Aspect Type
+                            </strong>{' '}
+                            <br></br> {aspect.aspect_type}
                         </p>
                         {/* Meaning displayed on hover */}
                         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg p-4 text-gray-800">
-                            <p className="text-center">
+                            <p className="text-center text-center bg-white shadow-md">
                                 <strong>Meaning:</strong> {aspect.meaning}
                             </p>
                         </div>
