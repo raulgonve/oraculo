@@ -151,4 +151,32 @@ class ElementController extends Controller
             return response()->json(['error' => 'Failed to create elements and aspects', 'details' => $e->getMessage()], 500);
         }
     }
+
+    public function getHoroscopeData()
+    {
+       if (!auth()->check()) {
+            return response()->json(['error' => 'User not authenticated'], 401);
+        }
+
+        $userId = auth()->id();
+
+        // Obtener los datos del usuario con sus elementos relacionados
+        $user = User::with('elements')->find($userId);
+
+        // Verificar si el usuario existe
+        if (!$user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+        // Preparar los datos para la respuesta
+        $astroData = [
+            'birth_date' => $user->birth_date,
+            'birth_time' => $user->birth_time,
+            'birth_place' => $user->birth_place,
+            'sun' => $user->elements->firstWhere('element_name', 'Sun Sign')->description ?? null,
+            'moon' => $user->elements->firstWhere('element_name', 'Moon')->description ?? null,
+            'ascendant' => $user->elements->firstWhere('element_name', 'Ascendant')->description ?? null,
+        ];
+
+        return response()->json($astroData);
+    }
 }

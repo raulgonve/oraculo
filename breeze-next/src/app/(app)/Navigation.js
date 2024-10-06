@@ -37,7 +37,7 @@ const Navigation = ({ user }) => {
                                     label: 'Astral Chart',
                                 },
                                 { href: '/astrobot', label: 'AstroBot' },
-                                { href: '/horoscope', label: 'Horóscopo' },
+                                { href: '/horoscope', label: 'Horoscope' },
                                 { href: '/images', label: 'Images' },
                             ].map(link => (
                                 <NavLink
@@ -121,7 +121,7 @@ const Navigation = ({ user }) => {
                             { href: '/dashboard', label: 'Dashboard' },
                             { href: '/astral', label: 'Astral Chart' },
                             { href: '/astrobot', label: 'AstroBot' },
-                            { href: '/horoscope', label: 'Horóscopo' },
+                            { href: '/horoscope', label: 'Horoscope' },
                             { href: '/images', label: 'Images' },
                         ].map(link => (
                             <ResponsiveNavLink

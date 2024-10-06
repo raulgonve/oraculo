@@ -23,3 +23,4 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 Route::post('/elements', [ElementController::class, 'store']);
 Route::get('/get-elements', [ElementController::class, 'index']);
 Route::get('/get-aspects', [AspectController::class, 'index']);
+Route::get('/horoscope-data', [ElementController::class, 'getHoroscopeData']);

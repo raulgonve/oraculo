@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
         // Generate a summary of the message
         const summaryResponse = await openai.chat.completions.create({
-            model: 'gpt-4',
+            model: 'gpt-4o',
             messages: [
                 {
                     role: 'user',
