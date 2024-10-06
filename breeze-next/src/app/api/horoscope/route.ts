@@ -1,22 +1,34 @@
-import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
+// Inicializar OpenAI con la configuración adecuada
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY, // Asegúrate de usar tu API Key
 })
 
-export const runtime = 'edge'
-
-export async function POST(req) {
+export async function POST(req: Request): Promise<Response> {
     try {
         // Obtener los datos enviados en la solicitud
         const userAstroData = await req.json()
 
-        if (!userAstroData) {
-            return new NextResponse('User data is required', { status: 400 })
+        if (
+            !userAstroData ||
+            !userAstroData.birthDate ||
+            !userAstroData.birthTime ||
+            !userAstroData.birthPlace
+        ) {
+            return new Response('User data is incomplete', { status: 400 })
         }
 
-        // Paso 1: Crear un hilo (thread) para generar la respuesta usando el asistente existente
+        // Actualizar el asistente para utilizar el vector store
+        await openai.beta.assistants.update('asst_a1TDl7rmQhlwWpqUJcr70c4b', {
+            tool_resources: {
+                file_search: {
+                    vector_store_ids: ['vs_1plXPNgu5shPvvJrIX1nQ0JG'],
+                },
+            },
+        })
+
+        // Crear un nuevo hilo para iniciar una conversación con el asistente existente
         const thread = await openai.beta.threads.create({
             messages: [
                 {
@@ -32,71 +44,56 @@ export async function POST(req) {
             ],
         })
 
-        console.log('Thread Created:', thread)
+        // Utilizar un stream para obtener la respuesta del asistente
+        let horoscopeText = ''
 
-        // Verificar si el hilo se creó correctamente
-        if (!thread || !thread.id) {
-            throw new Error('Failed to create thread.')
-        }
-
-        // Esperar brevemente para asegurarnos de que el Thread esté disponible
-        await new Promise(resolve => setTimeout(resolve, 5000)) // Esperar 5 segundos
-
-        // Paso 2: Crear un "Run" para ejecutar la solicitud usando el `assistant_id` proporcionado
-        const run = await openai.beta.threads.runs.create(thread.id, {
-            assistant_id: 'asst_a1TDl7rmQhlwWpqUJcr70c4b',
+        return new Promise<Response>((resolve, reject) => {
+            openai.beta.threads.runs
+                .stream(thread.id, {
+                    assistant_id: 'asst_a1TDl7rmQhlwWpqUJcr70c4b',
+                })
+                .on('textCreated', () => console.log('assistant >'))
+                .on('toolCallCreated', event =>
+                    console.log('assistant ' + event.type),
+                )
+                .on('textDelta', textDelta => {
+                    horoscopeText += textDelta.value
+                })
+                .on('messageDone', () => {
+                    if (horoscopeText) {
+                        resolve(
+                            new Response(
+                                JSON.stringify({ horoscope: horoscopeText }),
+                                {
+                                    status: 200,
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                },
+                            ),
+                        )
+                    } else {
+                        console.error('No valid content found in the response')
+                        resolve(
+                            new Response(
+                                'No valid content found in the response',
+                                { status: 400 },
+                            ),
+                        )
+                    }
+                })
+                .on('error', error => {
+                    console.error('Error during streaming:', error)
+                    reject(
+                        new Response('Failed to generate horoscope', {
+                            status: 500,
+                        }),
+                    )
+                })
         })
-
-        console.log('Run Created:', run)
-
-        // Verificar si el run se creó correctamente
-        if (!run || !run.id) {
-            throw new Error('Failed to create run.')
-        }
-
-        // Paso 3: Esperar a que el "Run" esté completado y verificar el resultado
-        let runStatus = run.status
-        let maxRetries = 15
-        let retryCount = 0
-
-        while (
-            runStatus !== 'completed' &&
-            runStatus !== 'failed' &&
-            retryCount < maxRetries
-        ) {
-            await new Promise(resolve => setTimeout(resolve, 2000)) // Esperar 2 segundos antes de consultar nuevamente
-            const updatedRun = await openai.beta.threads.runs.retrieve(run.id)
-            runStatus = updatedRun.status
-            retryCount++
-
-            console.log(
-                `Polling Run Status [Attempt ${retryCount}]: ${runStatus}`,
-            )
-        }
-
-        if (runStatus === 'failed') {
-            throw new Error(
-                'El proceso del asistente falló al generar el horóscopo.',
-            )
-        }
-
-        if (runStatus !== 'completed') {
-            throw new Error('El proceso del asistente no se completó a tiempo.')
-        }
-
-        // Paso 4: Obtener el resultado del run completado
-        const result = await openai.beta.threads.runs.result(run.id)
-
-        if (!result || !result.content) {
-            throw new Error(
-                'No se encontró contenido en la respuesta del asistente.',
-            )
-        }
-
-        // Devolver la respuesta del horóscopo
-        return NextResponse.json({ horoscope: result.content })
     } catch (error) {
-        console.error('Failed to generate horoscope:', error)
-        return new NextResponse('Failed to generate horoscope', { status: 500 })
+        // Registrar el error si ocurre alguno durante el proceso
+        console.error('Error generating horoscope:', error)
+        return new Response('Failed to generate horoscope', { status: 500 })
     }
 }
