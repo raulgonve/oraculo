@@ -8,7 +8,7 @@ import {
 } from 'react-icons/io5'
 import Link from 'next/link'
 
-export default function HoroscopeGenerator() {
+export default function HoroscopeGenerator({ user }) {
     const [userAstroData, setUserAstroData] = useState(null)
     const [horoscope, setHoroscope] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -33,6 +33,7 @@ export default function HoroscopeGenerator() {
                         data.birth_place
                     ) {
                         setUserAstroData({
+                            name: user?.name,
                             birthDate: data.birth_date,
                             birthTime: data.birth_time,
                             birthPlace: data.birth_place,
@@ -67,6 +68,8 @@ export default function HoroscopeGenerator() {
     const handleGenerateHoroscope = async () => {
         if (!userAstroData) return
         setIsLoading(true)
+        setHoroscope('') // Limpiar el horóscopo anterior
+
         try {
             const response = await fetch(`/api/horoscope`, {
                 method: 'POST',
@@ -76,11 +79,22 @@ export default function HoroscopeGenerator() {
                 body: JSON.stringify(userAstroData),
             })
 
-            if (response.ok) {
-                const data = await response.json()
-                setHoroscope(data.horoscope)
+            if (response.body) {
+                const reader = response.body.getReader()
+                const decoder = new TextDecoder()
+                let result = ''
+
+                // Leer el stream
+                while (true) {
+                    const { done, value } = await reader.read()
+                    if (done) break
+                    // Decodificar el fragmento recibido
+                    result += decoder.decode(value)
+                    // Actualizar el estado para mostrar el horóscopo a medida que se recibe
+                    setHoroscope(prev => prev + decoder.decode(value))
+                }
             } else {
-                console.error('Failed to generate horoscope')
+                console.error('Failed to generate horoscope: No response body')
             }
         } catch (error) {
             console.error('Error generating horoscope:', error)
@@ -88,7 +102,6 @@ export default function HoroscopeGenerator() {
             setIsLoading(false)
         }
     }
-
     if (!hasData) {
         return (
             <div className="flex flex-col items-center p-8 w-[90%] max-w-5xl mx-auto">
@@ -188,11 +201,14 @@ export default function HoroscopeGenerator() {
 
             {/* Mostrar el Horóscopo */}
             {horoscope && (
-                <div className="w-full mt-8 p-6 border border-gray-200 rounded-2xl bg-white shadow-lg hover:shadow-2xl hover:bg-gradient-to-br from-teal-100 to-blue-100 transform hover:scale-105 transition-all duration-500">
+                <div className="w-full mt-8 p-6 border border-gray-200 rounded-2xl bg-white shadow-lg hover:shadow-2xl  transform hover:scale-105 transition-all duration-500">
                     <h3 className="text-2xl font-semibold text-gray-800 mb-4">
-                        Horoscope
+                        Unlock the Secrets of Your Day, {user?.name}!
                     </h3>
-                    <p className="text-lg text-gray-700">{horoscope}</p>
+                    <div
+                        className="text-lg text-gray-700"
+                        dangerouslySetInnerHTML={{ __html: horoscope }} // Renderizar el HTML de la respuesta
+                    ></div>
                 </div>
             )}
         </div>
