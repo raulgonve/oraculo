@@ -29,7 +29,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "src/components/AstroChat.js"  ],
   "exclude": [
     "node_modules"
   ]

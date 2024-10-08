@@ -10,18 +10,29 @@ export default function AstroChat() {
     handleInputChange,
     setMessages,
     append,
+    isLoading
   } = useChat();
+
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isSending, setIsSending] = useState(false);
+  const [imageIsLoading, setImageIsLoading] = useState(false);
+  const [image, setImage] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false); // Controla la visibilidad del modal
 
   useEffect(() => {
+    // Por defecto agrega un mensaje inicial del asistente
+    if (messages.length === 0) {
+      const defaultMessage = { role: "assistant", content: "How can I assist you today?" };
+      setMessages([defaultMessage]);
+    }
+
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop =
         messagesContainerRef.current.scrollHeight;
     }
   }, [messages]);
 
-  const handleCustomSubmit = async (e: React.FormEvent) => {
+  const handleCustomSubmit = async (e) => {
     e.preventDefault();
 
     if (!input.trim()) return; // Evitar el envío de mensajes vacíos
@@ -42,23 +53,30 @@ export default function AstroChat() {
         }),
       });
 
-      if (response.ok && response.body) {
+      if (response.body) {
         const reader = response.body.getReader();
-        let chunk;
-        let assistantMessage = { role: "assistant", content: "" };
-        setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+        const decoder = new TextDecoder();
+        let assistantMessage = { role: "assistant", content: "" }; // Crear un mensaje de IA vacío
+        setMessages((prevMessages) => [...prevMessages, assistantMessage]); // Agregar el mensaje de IA
 
-        while (!(chunk = await reader.read()).done) {
-          const chunkText = new TextDecoder().decode(chunk.value);
-          assistantMessage.content += chunkText;
-          setMessages((prevMessages) =>
+        let result = '';
+
+        // Leer el stream
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          // Decodificar el fragmento recibido
+          result += decoder.decode(value);
+        }
+
+        setMessages((prevMessages) =>
             prevMessages.map((message) =>
               message === assistantMessage
-                ? { ...assistantMessage }
+                ? { ...assistantMessage, content: result }
                 : message
             )
           );
-        }
+
       } else {
         console.error("Error al obtener la respuesta del asistente");
       }
@@ -70,54 +88,31 @@ export default function AstroChat() {
     }
   };
 
-  const handleRandomRecipe = async () => {
-    // Enviar un mensaje predeterminado para solicitar una receta aleatoria
-    const randomMessage = { role: "user", content: "Give me a random recipe" };
-    setMessages((prevMessages) => [...prevMessages, randomMessage]);
-    setIsSending(true);
+  const generateImage = async () => {
+    setImageIsLoading(true);
+    const response = await fetch("/api/images", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: messages[messages.length - 1].content,
+      }),
+    });
+    const data = await response.json();
+    setImage(data);
+    setImageIsLoading(false);
+    setShowModal(true); // Mostrar el modal cuando la imagen se genera
+  };
 
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messages: [...messages, randomMessage],
-        }),
-      });
-
-      if (response.ok && response.body) {
-        const reader = response.body.getReader();
-        let chunk;
-        let assistantMessage = { role: "assistant", content: "" };
-        setMessages((prevMessages) => [...prevMessages, assistantMessage]);
-
-        while (!(chunk = await reader.read()).done) {
-          const chunkText = new TextDecoder().decode(chunk.value);
-          assistantMessage.content += chunkText;
-          setMessages((prevMessages) =>
-            prevMessages.map((message) =>
-              message === assistantMessage
-                ? { ...assistantMessage }
-                : message
-            )
-          );
-        }
-      } else {
-        console.error("Error al obtener la respuesta del asistente");
-      }
-    } catch (error) {
-      console.error("Error al enviar el mensaje:", error);
-    } finally {
-      setIsSending(false);
-    }
+  const closeModal = () => {
+    setShowModal(false);
   };
 
   return (
     <div className="flex flex-col items-center p-8 h-[600px] w-[80%] max-w-5xl mx-auto">
       {/* Contenedor del chat */}
-      <div className="bg-white p-6 rounded-lg shadow-md w-full h-full border-b border-gray-200 flex flex-col">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full h-full border-b border-gray-200 flex flex-col">
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">
           Astro Chat
         </h2>
@@ -135,8 +130,14 @@ export default function AstroChat() {
                   : "bg-gray-300 text-black" // Color ajustado para el asistente
               }`}
             >
-              {m.role === "user" ? "User: " : "AI: "}
-              {m.content}
+              {m.role === "user" ? (
+                <>
+                  User: {m.content}
+                </>
+              ) : (
+                // Renderizar el contenido del asistente como HTML
+                <div dangerouslySetInnerHTML={{ __html: "AI: " + m.content }} />
+              )}
             </div>
           ))}
           {(isSending) && (
@@ -145,26 +146,65 @@ export default function AstroChat() {
             </div>
           )}
         </div>
-        {/* Botón para acción adicional */}
-        <div className="flex justify-center mb-4">
-          <button
-            className="w-full py-3 px-4 bg-purple-500 text-white rounded bg-gradient-to-r from-teal-400 to-blue-500 hover:from-pink-500 hover:to-orange-500 transition duration-300 shadow-md"
-            disabled={isSending}
-            onClick={handleRandomRecipe}
-          >
-            Random Recipe
-          </button>
-        </div>
+
         {/* Formulario de entrada para el chat */}
-        <form onSubmit={handleCustomSubmit} className="w-full">
-          <input
-            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-indigo-500 text-black"
-            value={input}
-            placeholder="Say something..."
-            onChange={handleInputChange}
-          />
+        <form onSubmit={handleCustomSubmit} className="w-full flex flex-col items-center">
+          <div className="w-full flex items-center">
+            <input
+              className="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:border-indigo-500 text-black"
+              value={input}
+              placeholder="How can I assist you today?..."
+              onChange={handleInputChange}
+            />
+            <button
+              type="submit"
+              className="ml-2 py-2 px-4 bg-blue-500 text-white rounded bg-gradient-to-r from-teal-400 to-blue-500 hover:from-pink-500 hover:to-orange-500 transition duration-300 shadow-md"
+              disabled={isSending}
+            >
+              Send
+            </button>
+          </div>
+
+          {/* Botón Generate Image dentro de la caja del chat */}
+          <div className="mt-4 flex flex-col items-center">
+            {messages.length > 2 && !isLoading && (
+              <button
+                className="bg-blue-500 p-2 text-white rounded shadow-xl mb-4"
+                disabled={isLoading || imageIsLoading}
+                onClick={generateImage}
+              >
+                Generate Image
+              </button>
+            )}
+          </div>
         </form>
       </div>
+
+      {/* Spinner mientras se carga la imagen */}
+      {imageIsLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+        </div>
+      )}
+
+      {/* Modal para mostrar la imagen generada */}
+      {showModal && image && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg">
+            <img
+              src={`data:image/jpeg;base64,${image}`}
+              alt="Generated"
+              className="rounded-lg shadow-lg max-w-full h-auto object-contain"
+            />
+            <button
+              className="mt-4 bg-red-500 text-white py-2 px-4 rounded"
+              onClick={closeModal}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
