@@ -13,7 +13,20 @@ if (!assistantId) {
 export async function POST(req: Request): Promise<Response> {
     try {
         // Obtener los datos enviados en la solicitud
-        const { messages } = await req.json(); // Extraer el array de mensajes desde el cuerpo de la solicitud
+        const { messages,userAstroData } = await req.json(); // Extraer el array de mensajes desde el cuerpo de la solicitud
+
+        // agregar a messages los datos del usuario userAstroData
+        messages.push({
+            role: 'user',
+            content: `Here my personal data,
+            Name: ${userAstroData.name},
+            Date of Birth: ${userAstroData.birthDate},
+            Time of Birth: ${userAstroData.birthTime},
+            Place of Birth: ${userAstroData.birthPlace},
+            Sun Sign: ${userAstroData.sun},
+            Moon Sign: ${userAstroData.moon},
+            Rising Sign: ${userAstroData.ascendant}.`,
+        });
 
         // Actualizar el asistente para utilizar el vector store (si es necesario)
         await openai.beta.assistants.update(assistantId, {
@@ -26,7 +39,7 @@ export async function POST(req: Request): Promise<Response> {
 
         // Crear el thread con todos los mensajes del usuario y la IA
         const thread = await openai.beta.threads.create({
-            messages: messages, // Pasar los mensajes anteriores más el nuevo del usuario
+            messages: messages,
         });
 
         // Crear un stream para enviar la respuesta al cliente a medida que se genera

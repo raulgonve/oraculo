@@ -3,7 +3,7 @@
 import { useChat } from "ai/react";
 import { useEffect, useRef, useState } from "react";
 
-export default function AstroChat() {
+export default function AstroChat({ user }) {
   const {
     messages,
     input,
@@ -18,11 +18,53 @@ export default function AstroChat() {
   const [imageIsLoading, setImageIsLoading] = useState(false);
   const [image, setImage] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false); // Controla la visibilidad del modal
+  const [userAstroData, setUserAstroData] = useState(null)
+
+  useEffect(() => {
+        // Fetch data from Laravel API when the component mounts
+        const fetchUserAstroData = async () => {
+            try {
+                const response = await fetch(
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/horoscope-data`,
+                    {
+                        method: 'GET',
+                        credentials: 'include',
+                    }, // Asegúrate de enviar las cookies de sesión
+                )
+                if (response.ok) {
+                    const data = await response.json()
+                    if (
+                        data.birth_date &&
+                        data.birth_time &&
+                        data.birth_place
+                    ) {
+                        setUserAstroData({
+                            name: user?.name,
+                            birthDate: data.birth_date,
+                            birthTime: data.birth_time,
+                            birthPlace: data.birth_place,
+                            sun: data.sun,
+                            moon: data.moon,
+                            ascendant: data.ascendant,
+                        })
+                    } else {
+                        setHasData(false)
+                    }
+                } else {
+                    console.error('Failed to fetch user astro data')
+                }
+            } catch (error) {
+                console.error('Error fetching user astro data:', error)
+            }
+        }
+
+        fetchUserAstroData()
+    }, [])
 
   useEffect(() => {
     // Por defecto agrega un mensaje inicial del asistente
     if (messages.length === 0) {
-      const defaultMessage = { role: "assistant", content: "How can I assist you today?" };
+      const defaultMessage = { role: "assistant", content: `Hi ${user?.name}, How can I assist you today?` };
       setMessages([defaultMessage]);
     }
 
@@ -33,6 +75,7 @@ export default function AstroChat() {
   }, [messages]);
 
   const handleCustomSubmit = async (e) => {
+    handleInputChange({ target: { value: "" } }); // Limpiar el input
     e.preventDefault();
 
     if (!input.trim()) return; // Evitar el envío de mensajes vacíos
@@ -50,34 +93,45 @@ export default function AstroChat() {
         },
         body: JSON.stringify({
           messages: [...messages, userMessage],
+          userAstroData: userAstroData,
         }),
       });
 
       if (response.body) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let assistantMessage = { role: "assistant", content: "" }; // Crear un mensaje de IA vacío
-        setMessages((prevMessages) => [...prevMessages, assistantMessage]); // Agregar el mensaje de IA
+        let result = "";
 
-        let result = '';
+        // Crear un mensaje de IA vacío y agregarlo al estado
+        let assistantMessageIndex: number;
+
+        setMessages((prevMessages) => {
+            // Agregar el mensaje de IA vacío y obtener su índice
+            const newMessages = [...prevMessages, { role: "assistant", content: "" }];
+            assistantMessageIndex = newMessages.length - 1;
+            return newMessages;
+        });
 
         // Leer el stream
         while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          // Decodificar el fragmento recibido
-          result += decoder.decode(value);
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            // Decodificar el fragmento recibido y acumularlo
+            result += decoder.decode(value);
+
+            // Actualizar el contenido del mensaje de IA
+            setMessages((prevMessages) => {
+            // Actualizar el contenido del mensaje en su índice
+            const updatedMessages = [...prevMessages];
+            updatedMessages[assistantMessageIndex] = {
+                ...updatedMessages[assistantMessageIndex],
+                content: result,
+            };
+            return updatedMessages;
+            });
         }
-
-        setMessages((prevMessages) =>
-            prevMessages.map((message) =>
-              message === assistantMessage
-                ? { ...assistantMessage, content: result }
-                : message
-            )
-          );
-
-      } else {
+        } else {
         console.error("Error al obtener la respuesta del asistente");
       }
     } catch (error) {
@@ -91,6 +145,8 @@ export default function AstroChat() {
   const generateImage = async () => {
     setImageIsLoading(true);
     const response = await fetch("/api/images", {
+    // const response = await fetch("/api/stable-diffusion", {
+    // const response = await fetch("/api/livepeer", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -167,7 +223,7 @@ export default function AstroChat() {
 
           {/* Botón Generate Image dentro de la caja del chat */}
           <div className="mt-4 flex flex-col items-center">
-            {messages.length > 2 && !isLoading && (
+            {messages.length > 0 && !isLoading && (
               <button
                 className="bg-blue-500 p-2 text-white rounded shadow-xl mb-4"
                 disabled={isLoading || imageIsLoading}
@@ -192,9 +248,9 @@ export default function AstroChat() {
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-white p-4 rounded-lg shadow-lg">
             <img
-              src={`data:image/jpeg;base64,${image}`}
-              alt="Generated"
-              className="rounded-lg shadow-lg max-w-full h-auto object-contain"
+                src={`data:image/jpeg;base64,${image}`}
+                alt="Generated"
+                className="rounded-lg shadow-lg max-w-full h-auto object-contain"
             />
             <button
               className="mt-4 bg-red-500 text-white py-2 px-4 rounded"

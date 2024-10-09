@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@headlessui/react": "^1.4.2",
+    "@livepeer/ai": "^0.4.0",
     "@react-google-maps/api": "^2.19.3",
     "ai": "^3.4.7",
     "astral": "^0.1.0",
