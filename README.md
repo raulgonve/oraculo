@@ -76,16 +76,13 @@ Here are some screenshots of the main modules of Oracle AI:
   ![Dashboard](public/assets/screenshots/dashboard.png)
 
 - **Astral Chart**: The user's complete astral chart with audio summary.
-  ![Astral Chart](public/assets/screenshots/astral-chart.png)
+  ![Astral Chart](public/assets/screenshots/astralchart.png)
 
 - **Astrobot**: Chat with the AI-powered astrology expert.
   ![Astrobot](public/assets/screenshots/astrobot.png)
 
 - **Horoscope**: Daily horoscope generation based on the user's natal chart.
   ![Horoscope](public/assets/screenshots/horoscope.png)
-
-- **Astrology Elements**: Detailed breakdown of astrological elements.
-  ![Astrology Elements](public/assets/screenshots/astrology.png)
 
 - **Image Generation**: Generate images based on the chat with Astrobot.
   ![Image Generation](public/assets/screenshots/image.png)
