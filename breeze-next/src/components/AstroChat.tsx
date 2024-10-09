@@ -144,8 +144,8 @@ export default function AstroChat({ user }) {
 
   const generateImage = async () => {
     setImageIsLoading(true);
-    const response = await fetch("/api/images", {
-    // const response = await fetch("/api/stable-diffusion", {
+    // const response = await fetch("/api/images", {
+    const response = await fetch("/api/stable-diffusion", {
     // const response = await fetch("/api/livepeer", {
       method: "POST",
       headers: {
@@ -156,6 +156,8 @@ export default function AstroChat({ user }) {
       }),
     });
     const data = await response.json();
+    console.log(data);
+
     setImage(data);
     setImageIsLoading(false);
     setShowModal(true); // Mostrar el modal cuando la imagen se genera
@@ -251,6 +253,7 @@ export default function AstroChat({ user }) {
                 src={`data:image/jpeg;base64,${image}`}
                 alt="Generated"
                 className="rounded-lg shadow-lg max-w-full h-auto object-contain"
+                style={{ maxHeight: "60vh" }}
             />
             <button
               className="mt-4 bg-red-500 text-white py-2 px-4 rounded"
