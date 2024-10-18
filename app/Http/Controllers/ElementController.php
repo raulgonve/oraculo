@@ -173,7 +173,9 @@ class ElementController extends Controller
             'birth_time' => $user->birth_time,
             'birth_place' => $user->birth_place,
             'sun' => $user->elements->firstWhere('element_name', 'Sun Sign')->description ?? null,
-            'moon' => $user->elements->firstWhere('element_name', 'Moon')->description ?? null,
+            'moon' => $user->elements->firstWhere(function ($element) {
+                            return in_array($element->element_name, ['Moon', 'Moon Sign']);
+                        })->description ?? null,
             'ascendant' => $user->elements->firstWhere('element_name', 'Ascendant')->description ?? null,
         ];
 

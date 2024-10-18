@@ -38,7 +38,8 @@ const Navigation = ({ user }) => {
                                 },
                                 { href: '/astrobot', label: 'AstroBot' },
                                 { href: '/horoscope', label: 'Horoscope' },
-                                { href: '/images', label: 'Images' },
+                                { href: '/nft', label: 'Astral NFT' },
+                                { href: '/zora', label: 'Zora' },
                             ].map(link => (
                                 <NavLink
                                     key={link.href}
@@ -122,7 +123,8 @@ const Navigation = ({ user }) => {
                             { href: '/astral', label: 'Astral Chart' },
                             { href: '/astrobot', label: 'AstroBot' },
                             { href: '/horoscope', label: 'Horoscope' },
-                            { href: '/images', label: 'Images' },
+                            { href: '/nft', label: 'Images' },
+                            { href: '/zora', label: 'Zora' },
                         ].map(link => (
                             <ResponsiveNavLink
                                 key={link.href}

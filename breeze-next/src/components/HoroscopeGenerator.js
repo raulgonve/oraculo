@@ -112,10 +112,10 @@ export default function HoroscopeGenerator({ user }) {
                     It seems that your birth details are missing. Please
                     generate and save your astral chart to proceed.
                 </p>
-                <Link href="/astral-chart">
-                    <a className="text-blue-600 hover:underline">
-                        Go to Astral Chart
-                    </a>
+                <Link
+                    href="/astral-chart"
+                    className="text-blue-600 hover:underline">
+                    Go to Astral Chart
                 </Link>
             </div>
         )
