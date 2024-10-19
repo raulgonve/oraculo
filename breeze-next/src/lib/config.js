@@ -1,8 +1,10 @@
-import { createPublicClient, http } from 'viem'
+import { http, createConfig } from 'wagmi'
 import { zora } from 'viem/chains'
 
-export const publicClient = createPublicClient({
-    chain: zora,
-    transport: http(),
+// Crear configuración de wagmi con las cadenas y transporte HTTP
+export const config = createConfig({
+    chains: [zora],
+    transports: {
+        [zora.id]: http(),
+    },
 })
-export const chainId = zora.id

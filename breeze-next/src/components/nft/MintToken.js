@@ -1,56 +1,51 @@
 'use client'
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import useZoraClient from '../../hooks/useZoraClient'
-import alchemy from '../../lib/alchemyClient' // Importa el cliente de Alchemy
+import { createCreatorClient } from '@zoralabs/protocol-sdk'
+import { createPublicClient, http } from 'viem'
+import { zora } from 'viem/chains'
 
-function MintToken({ contractAddress }) {
-    const [quantity, setQuantity] = useState(1)
+const MintToken = ({ contractAddress }) => {
+    const { address } = useAccount()
     const [status, setStatus] = useState('')
-    const { address } = useAccount() // Obtener la cuenta conectada
-    const creatorClient = useZoraClient()
 
-    const handleMint = async () => {
+    const publicClient = createPublicClient({
+        chain: zora,
+        transport: http(
+            `https://eth-mainnet.alchemyapi.io/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
+        ),
+    })
+
+    const creatorClient = createCreatorClient({
+        chainId: zora.id,
+        publicClient,
+    })
+
+    const handleMintToken = async () => {
         try {
-            setStatus('Minting token...')
-
-            // Preparar el minteo
             const { prepareMint } =
                 await creatorClient.create1155OnExistingContract({
                     contractAddress,
-                    token: {
-                        tokenMetadataURI: 'ipfs://your_token_metadata.json',
-                    },
+                    token: { tokenMetadataURI: 'ipfs://token-uri' },
                     account: address,
                 })
 
-            // Preparar la transacción de mint
             const { parameters: mintParams } = await prepareMint({
-                quantityToMint: BigInt(quantity),
+                quantityToMint: BigInt(1),
                 minterAccount: address,
             })
 
-            // Enviar la transacción usando Alchemy
-            const txHash = await alchemy.transact(mintParams)
-
-            setStatus(`Token minted successfully! Transaction Hash: ${txHash}`)
+            await publicClient.writeContract(mintParams)
+            setStatus('Token minted successfully!')
         } catch (error) {
-            console.error(error)
+            console.error('Error minting token', error)
             setStatus('Error minting token.')
         }
     }
 
     return (
         <div>
-            <input
-                type="number"
-                value={quantity}
-                onChange={e => setQuantity(e.target.value)}
-                className="border p-2 m-2"
-            />
-            <button onClick={handleMint} className="bg-blue-500 p-2 rounded">
-                Mint Token
-            </button>
+            <button onClick={handleMintToken}>Mint Token</button>
             <p>{status}</p>
         </div>
     )

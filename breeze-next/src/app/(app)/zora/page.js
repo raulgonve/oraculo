@@ -1,9 +1,9 @@
 'use client'
 import { useState } from 'react'
-import Create1155Contract from '../../../components/nft/Create1155Contract' // Corregir la importación
+import Create1155Contract from '../../../components/nft/Create1155Contract'
 import MintToken from '../../../components/nft/MintToken'
 
-function Zora() {
+function ZoraPage() {
     const [contractAddress, setContractAddress] = useState('')
 
     const handleContractCreated = address => {
@@ -13,13 +13,10 @@ function Zora() {
     return (
         <div>
             <h1>Create and Mint your ERC-1155</h1>
-            {/* Pasar la función handleContractCreated como prop */}
             <Create1155Contract onContractCreated={handleContractCreated} />
-
-            {/* Mostrar MintToken solo si hay contractAddress */}
             {contractAddress && <MintToken contractAddress={contractAddress} />}
         </div>
     )
 }
 
-export default Zora
+export default ZoraPage

@@ -1,72 +1,79 @@
-'use client'
-import { useState } from 'react'
-import { useAccount } from 'wagmi'
-import useZoraClient from '../../hooks/useZoraClient'
-import alchemy from '../../lib/alchemyClient'
+import {
+    useAccount,
+    useChainId,
+    usePublicClient,
+    useWriteContract,
+} from 'wagmi'
+import { createCreatorClient } from '@zoralabs/protocol-sdk'
+import { useEffect, useState } from 'react'
 
-function Create1155Contract({ onContractCreated }) {
-    // Recibe el prop onContractCreated
+const Create1155Contract = () => {
+    const chainId = useChainId()
+    const publicClient = usePublicClient()
     const { address } = useAccount()
-    const creatorClient = useZoraClient()
-    const [contractName, setContractName] = useState('')
-    const [contractUri, setContractUri] = useState('')
-    const [tokenUri, setTokenUri] = useState('')
-    const [status, setStatus] = useState('')
+    const { writeContract } = useWriteContract()
 
-    const handleCreateContract = async () => {
-        try {
-            setStatus('Creating contract...')
+    const [contractAddress, setContractAddress] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
 
-            const { parameters, contractAddress } =
-                await creatorClient.create1155({
-                    contract: { name: contractName, uri: contractUri },
-                    token: { tokenMetadataURI: tokenUri },
-                    account: address,
+    useEffect(() => {
+        const createContract = async () => {
+            try {
+                if (!address) {
+                    throw new Error('Wallet not connected')
+                }
+
+                // Crea el cliente de Zora con el chainId y publicClient
+                const creatorClient = createCreatorClient({
+                    chainId,
+                    publicClient,
                 })
 
-            const txHash = await alchemy.transact(parameters)
+                // Crea el contrato 1155 en una dirección determinista
+                const { parameters, contractAddress } =
+                    await creatorClient.create1155({
+                        contract: {
+                            name: 'testContract',
+                            uri: 'ipfs://DUMMY/contract.json',
+                        },
+                        token: {
+                            tokenMetadataURI: 'ipfs://DUMMY/token.json',
+                        },
+                        account: address,
+                    })
 
-            setStatus(
-                `Contract created at: ${contractAddress} \n Transaction Hash: ${txHash}`,
-            )
+                // Almacena la dirección del contrato en el estado
+                setContractAddress(contractAddress)
 
-            // Pasar la dirección del contrato al componente padre
-            onContractCreated(contractAddress)
-        } catch (error) {
-            console.error(error)
-            setStatus('Error creating contract.')
+                // Ejecuta la transacción de contrato
+                writeContract(parameters)
+                setLoading(false)
+            } catch (error) {
+                console.error('Error creating contract:', error)
+                setError(error.message)
+                setLoading(false)
+            }
         }
+
+        // Ejecuta la función solo si la cuenta está conectada
+        if (address && chainId && publicClient) {
+            createContract()
+        }
+    }, [address, chainId, publicClient, writeContract])
+
+    if (loading) {
+        return <div>Loading...</div>
+    }
+
+    if (error) {
+        return <div>Error: {error}</div>
     }
 
     return (
         <div>
-            <input
-                type="text"
-                placeholder="Contract Name"
-                value={contractName}
-                onChange={e => setContractName(e.target.value)}
-                className="border p-2 m-2"
-            />
-            <input
-                type="text"
-                placeholder="Contract URI"
-                value={contractUri}
-                onChange={e => setContractUri(e.target.value)}
-                className="border p-2 m-2"
-            />
-            <input
-                type="text"
-                placeholder="Token URI"
-                value={tokenUri}
-                onChange={e => setTokenUri(e.target.value)}
-                className="border p-2 m-2"
-            />
-            <button
-                onClick={handleCreateContract}
-                className="bg-blue-500 p-2 rounded">
-                Create Contract
-            </button>
-            <p>{status}</p>
+            Contract Address:{' '}
+            {contractAddress ? contractAddress : 'Not available'}
         </div>
     )
 }
