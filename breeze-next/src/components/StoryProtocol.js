@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Modal from 'react-modal'
+import { FaTwitter } from 'react-icons/fa'
 
 export default function StoryProtocol({ user }) {
     const [isLoading, setIsLoading] = useState(false)
@@ -156,16 +157,30 @@ export default function StoryProtocol({ user }) {
                                 alt={`Generated Astral NFT ${index + 1}`}
                                 className="w-full h-auto"
                             />
-                            <button
-                                onClick={() => handleCreateNFT(imageResponse)}
-                                className="absolute bottom-4 right-4 py-2 px-4 bg-blue-600 text-white rounded-md shadow-lg hover:bg-blue-700 transform hover:scale-110 transition-all duration-300"
-                                disabled={imageIsLoading}>
-                                Create NFT
-                            </button>
+                            <div className="absolute bottom-4 right-4 flex space-x-4">
+                                {/* Botón para crear NFT */}
+                                <button
+                                    onClick={() =>
+                                        handleCreateNFT(imageResponse)
+                                    }
+                                    className="py-2 px-4 bg-gradient-to-r from-red-600 to-orange-600 text-white font-semibold rounded-md shadow-lg hover:bg-blue-700 transform hover:scale-110 transition-all duration-300"
+                                    disabled={imageIsLoading}>
+                                    Create NFT
+                                </button>
+                                {/* Botón para compartir en X */}
+                                <a
+                                    href={`https://twitter.com/intent/tweet?text=Check%20out%20this%20image%20generated%20by%20Livepeer%20AI!&url=${encodeURIComponent(imageResponse)}&hashtags=Livepeer,AI`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="py-2 px-4 bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold rounded-md shadow-lg hover:bg-blue-700 transform hover:scale-110 transition-all duration-300">
+                                    <FaTwitter className="text-xl" />
+                                </a>
+                            </div>
                         </div>
                     ))}
                 </div>
             )}
+
             {/* Spinner mientras se carga la imagen */}
             {imageIsLoading && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
