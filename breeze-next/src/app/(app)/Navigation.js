@@ -79,6 +79,7 @@ const Navigation = ({ user }) => {
                                 { href: '/horoscope', label: 'Horoscope' },
                                 { href: '/nft', label: 'Astral NFT' },
                                 { href: '/zora', label: 'Zora' },
+                                { href: '/swarmzero', label: 'SwarmZero' },
                             ].map(link => (
                                 <NavLink
                                     key={link.href}
@@ -176,6 +177,7 @@ const Navigation = ({ user }) => {
                             { href: '/horoscope', label: 'Horoscope' },
                             { href: '/nft', label: 'Images' },
                             { href: '/zora', label: 'Zora' },
+                            { href: '/swarmzero', label: 'SwarmZero' },
                         ].map(link => (
                             <ResponsiveNavLink
                                 key={link.href}
