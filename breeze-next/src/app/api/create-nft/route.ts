@@ -86,9 +86,6 @@ export async function POST(req: Request) {
             name: `IP Astrological NFT for ${userAstroData.name}`,
             description: prompt || 'Astrological NFT',
             image: imageUrl,
-            imageFile: imageUrl,
-            mediaUrl: imageUrl,
-            thumbnailUrl: imageUrl,
         }
 
         // Upload metadata to IPFS

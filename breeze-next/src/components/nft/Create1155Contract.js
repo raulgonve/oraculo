@@ -65,7 +65,7 @@ const Create1155Contract = ({
             const { parameters, contractAddress } =
                 await creatorClient.create1155({
                     contract: {
-                        name: 'testContract4',
+                        name: 'testContract20',
                         uri: 'ipfs.io/ipfs/Qmdj5Lq1LzEFEH3WvstPLcLrnVFxt9n6bV8iGMa9qAeLvW',
                     },
                     token: {

@@ -11,6 +11,7 @@ function ZoraPage() {
     const [isMintingReady, setIsMintingReady] = useState(false)
     const [isTransactionConfirmed, setIsTransactionConfirmed] = useState(false)
     const [errorMessage, setErrorMessage] = useState(null)
+    const [showMintToken, setShowMintToken] = useState(false) // Estado para mostrar el componente MintToken
 
     // Manejar el archivo multimedia y previsualizarlo
     const handleFileChange = event => {
@@ -39,6 +40,17 @@ function ZoraPage() {
 
     const handleTransactionError = error => {
         setErrorMessage(`Transaction failed: ${error}`)
+    }
+
+    const handleMintTokenClick = () => {
+        // Solo mostrar el componente MintToken si la transacción fue confirmada y hay una contractAddress
+        if (isTransactionConfirmed && contractAddress) {
+            setShowMintToken(true)
+        } else {
+            setErrorMessage(
+                'Transaction not confirmed or contract address is missing.',
+            )
+        }
     }
 
     return (
@@ -128,9 +140,20 @@ function ZoraPage() {
                             {/* Botón para mintear el token */}
                             {isTransactionConfirmed && contractAddress && (
                                 <div className="w-full max-w-sm mt-6">
-                                    <button className="w-full py-3 px-6 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-md font-semibold shadow-md transform hover:scale-110 hover:shadow-xl transition-all duration-500 ease-in-out focus:outline-none focus:ring-4 focus:ring-green-300">
+                                    <button
+                                        onClick={handleMintTokenClick}
+                                        className="w-full py-3 px-6 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-md font-semibold shadow-md transform hover:scale-110 hover:shadow-xl transition-all duration-500 ease-in-out focus:outline-none focus:ring-4 focus:ring-green-300">
                                         Mint Token
                                     </button>
+                                </div>
+                            )}
+
+                            {/* Mostrar el componente MintToken si se cumple la condición */}
+                            {showMintToken && (
+                                <div className="w-full max-w-sm mt-6">
+                                    <MintToken
+                                        contractAddress={contractAddress}
+                                    />
                                 </div>
                             )}
                         </div>
