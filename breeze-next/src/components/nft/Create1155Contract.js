@@ -1,162 +1,152 @@
 import { useEffect, useState } from 'react'
 import { createCreatorClient } from '@zoralabs/protocol-sdk'
-import {
-    useAccount,
-    useChainId,
-    usePublicClient,
-    useWriteContract,
-} from 'wagmi'
+import { useAccount, useChainId } from 'wagmi'
+import { createWalletClient, custom, createPublicClient } from 'viem'
+import { BrowserProvider } from 'ethers'
 
 const Create1155Contract = ({
     onContractCreated,
-    onTransactionConfirmed,
     onTransactionError,
+    onTransactionConfirmed,
 }) => {
     const chainId = useChainId()
-    const publicClient = usePublicClient()
-    const { address } = useAccount()
-    const { writeContract } = useWriteContract()
-
+    const { address: loggedInAddress } = useAccount()
+    const [publicClient, setPublicClient] = useState(null)
+    const [walletClient, setWalletClient] = useState(null)
     const [contractAddress, setContractAddress] = useState(null)
-    const [parameters, setParameters] = useState(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
     const [isContractCreated, setIsContractCreated] = useState(false)
-    const [isTransactionSent, setIsTransactionSent] = useState(false)
+    const [isExecuting, setIsExecuting] = useState(false) // Estado para evitar múltiples ejecuciones
 
-    // Separar las funciones para evitar múltiples ejecuciones
-    const createContract = async () => {
-        if (!address || loading || isContractCreated) {
-            console.log('Exiting createContract early: Conditions not met', {
-                address,
-                loading,
-                isContractCreated,
+    // Obtener el proveedor de MetaMask y configurar walletClient y publicClient
+    useEffect(() => {
+        ;(async function () {
+            if (!window.ethereum) {
+                console.error('Please install MetaMask!')
+                return
+            }
+            const provider = new BrowserProvider(window.ethereum)
+            await provider.send('eth_requestAccounts', [])
+            const signer = await provider.getSigner()
+
+            const walletClient = createWalletClient({
+                transport: custom(window.ethereum),
+                chain: { id: chainId },
             })
-            return // Evitar múltiples ejecuciones
+
+            const publicClient = createPublicClient({
+                transport: custom(window.ethereum),
+            })
+
+            setWalletClient(walletClient)
+            setPublicClient(publicClient)
+        })()
+    }, [chainId])
+
+    const createContract = async () => {
+        // Verificar si ya se está ejecutando o si el contrato ya se creó o está cargando
+        if (isExecuting || loading || isContractCreated) {
+            console.log(
+                'Contract creation or transaction is already in progress',
+            )
+            return
         }
 
-        try {
-            console.log('Creating contract...')
-            setLoading(true) // Bloquear ejecuciones múltiples
-            setError(null) // Limpiar error anterior
+        setIsExecuting(true) // Bloquear ejecuciones múltiples
+        setLoading(true) // Iniciar la carga
 
-            // Crear el cliente de Zora
+        try {
             const creatorClient = createCreatorClient({
                 chainId,
                 publicClient,
             })
 
-            // Crear el contrato 1155
             const { parameters, contractAddress } =
                 await creatorClient.create1155({
                     contract: {
-                        name: 'testContract',
-                        uri: 'ipfs://DUMMY/contract.json',
+                        name: 'testContract4',
+                        uri: 'ipfs.io/ipfs/Qmdj5Lq1LzEFEH3WvstPLcLrnVFxt9n6bV8iGMa9qAeLvW',
                     },
                     token: {
-                        tokenMetadataURI: 'ipfs://DUMMY/token.json',
+                        tokenMetadataURI:
+                            'ipfs.io/ipfs/QmeD7CBtjZe4Yc3KzfuR5xyvT3oMn2AzGjEXnEbdTht65a',
                     },
-                    account: address,
+                    account: loggedInAddress,
                 })
 
-            console.log('Contract created successfully:', { contractAddress })
-
             setContractAddress(contractAddress)
-            setParameters(parameters)
-            setIsContractCreated(true) // Marcar como contrato creado
+            setIsContractCreated(true)
 
             if (onContractCreated) {
-                onContractCreated(contractAddress) // Informar al componente padre
+                onContractCreated(contractAddress)
             }
 
-            setLoading(false) // Terminar el estado de carga
+            // Simular la llamada al contrato antes de enviar la transacción
+            const simulation = await publicClient.simulateContract({
+                ...parameters,
+                account: loggedInAddress,
+                chain: { id: chainId },
+            })
+
+            console.log('Simulation result:', simulation)
+
+            if (simulation.error) {
+                throw new Error(`Simulation failed: ${simulation.error}`)
+            }
+
+            // Enviar la transacción si la simulación es exitosa
+            const txHash = await walletClient.writeContract({
+                ...parameters,
+                account: loggedInAddress,
+                chain: { id: chainId },
+            })
+
+            console.log('Transaction sent, hash:', txHash)
+
+            // Esperar la confirmación de la transacción
+            const receipt = await publicClient.waitForTransactionReceipt({
+                hash: txHash,
+            })
+
+            if (receipt.status === 'success') {
+                console.log('Transaction confirmed:', receipt)
+                if (onTransactionConfirmed) {
+                    onTransactionConfirmed(receipt)
+                }
+            } else {
+                throw new Error('Transaction failed')
+            }
         } catch (error) {
             console.error('Error creating contract:', error)
             setError(error.message)
-
             if (onTransactionError) {
-                onTransactionError(error.message) // Informar del error
+                onTransactionError(error.message)
             }
-
-            setLoading(false) // Detener el estado de carga en caso de error
+        } finally {
+            setLoading(false) // Finalizar la carga
+            setIsExecuting(false) // Desbloquear ejecuciones
         }
     }
 
-    const executeTransaction = async parameters => {
-        if (!isContractCreated || !parameters || isTransactionSent) {
-            console.log(
-                'Exiting executeTransaction early: Conditions not met',
-                { isContractCreated, parameters, isTransactionSent },
-            )
-            return // Prevenir múltiples ejecuciones
-        }
-
-        try {
-            console.log('Executing transaction...')
-            setLoading(true) // Iniciar el estado de carga
-            setError(null) // Limpiar errores previos
-
-            // Verificar que writeContract esté correctamente configurado
-            if (!writeContract) {
-                console.error('writeContract is not defined properly')
-                throw new Error('writeContract is undefined or misconfigured')
-            }
-
-            const txResponse = await writeContract(parameters) // Ejecutar transacción
-
-            if (!txResponse) {
-                console.error('Transaction response is undefined. Aborting.')
-                throw new Error('Transaction response is undefined')
-            }
-
-            console.log('Transaction response received:', { txResponse })
-
-            setIsTransactionSent(true) // Marcar la transacción como enviada
-
-            // Esperar la confirmación de la transacción
-            const receipt = await txResponse.wait()
-
-            if (receipt.status === 1) {
-                console.log('Transaction confirmed:', { receipt })
-                if (onTransactionConfirmed) {
-                    onTransactionConfirmed() // Informar al componente padre si se confirma la transacción
-                }
-            } else {
-                throw new Error('Transaction failed') // Si la transacción falló
-            }
-
-            setLoading(false) // Terminar el estado de carga
-        } catch (error) {
-            console.error('Error executing transaction:', error)
-            setError(error.message)
-
-            if (onTransactionError) {
-                onTransactionError(error.message) // Informar del error
-            }
-
-            setLoading(false) // Detener el estado de carga en caso de error
-        }
-    }
-
-    // Solo crear el contrato si no ha sido creado
     useEffect(() => {
-        console.log(
-            'useEffect triggered: Checking if we need to create a contract',
-        )
-        if (address && chainId && publicClient && !isContractCreated) {
+        // Asegurarse de que solo se ejecute una vez cuando las dependencias estén listas
+        if (
+            loggedInAddress &&
+            walletClient &&
+            publicClient &&
+            !isContractCreated &&
+            !loading
+        ) {
             createContract()
         }
-    }, [address, chainId, publicClient, isContractCreated])
-
-    // Solo ejecutar la transacción si el contrato ha sido creado
-    useEffect(() => {
-        console.log(
-            'useEffect triggered: Checking if we need to execute the transaction',
-        )
-        if (isContractCreated && !isTransactionSent && parameters) {
-            executeTransaction(parameters)
-        }
-    }, [isContractCreated, isTransactionSent, parameters, writeContract])
+    }, [
+        loggedInAddress,
+        walletClient,
+        publicClient,
+        isContractCreated,
+        loading,
+    ])
 
     if (loading) {
         return <div>Loading...</div>
