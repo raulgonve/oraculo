@@ -22,6 +22,7 @@ const Create1155Contract = ({
     const [error, setError] = useState(null)
     const [isContractCreated, setIsContractCreated] = useState(false)
     const [isExecuting, setIsExecuting] = useState(false)
+    const [txHash, setTxHash] = useState(null)
 
     // Obtener el proveedor de MetaMask y configurar walletClient y publicClient
     useEffect(() => {
@@ -150,6 +151,9 @@ const Create1155Contract = ({
 
             console.log('Transaction sent, hash:', txHash)
 
+            // Guardar el hash en el estado
+            setTxHash(txHash)
+
             // Esperar la confirmación de la transacción
             const receipt = await publicClient.waitForTransactionReceipt({
                 hash: txHash,
@@ -202,8 +206,24 @@ const Create1155Contract = ({
 
     return (
         <div>
-            Contract Address:{' '}
-            {contractAddress ? contractAddress : 'Not available'}
+            <p>
+                Contract Address:{' '}
+                {contractAddress ? contractAddress : 'Not available'}
+            </p>
+
+            {/* Mostrar el link al explorador de la transacción */}
+            {txHash && (
+                <p>
+                    Transaction Explorer:{' '}
+                    <a
+                        href={`https://explorer.zora.energy/tx/${txHash}`} // Ajusta el enlace al explorador según la red
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: 'blue', textDecoration: 'underline' }}>
+                        View on Explorer
+                    </a>
+                </p>
+            )}
         </div>
     )
 }

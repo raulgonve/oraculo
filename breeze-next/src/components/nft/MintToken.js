@@ -12,6 +12,8 @@ const MintToken = ({ contractAddress }) => {
     const [loading, setLoading] = useState(false) // Estado de carga para evitar múltiples ejecuciones
     const [simulationError, setSimulationError] = useState(null) // Estado para manejar errores de simulación
     const [minted, setMinted] = useState(false) // Estado para evitar la segunda ejecución
+    const [txHash, setTxHash] = useState(null)
+
 
     const handleMintToken = async () => {
         if (loading || minted) return // Si ya está en proceso o ya se minteó, no hacer nada
@@ -86,6 +88,9 @@ const MintToken = ({ contractAddress }) => {
                 throw new Error('Transaction hash is undefined')
             }
 
+            // Guardar el hash en el estado
+            setTxHash(txHash)
+
             console.log('Transaction sent, hash:', txHash)
             setStatus('Transaction sent, hash: ' + txHash)
 
@@ -119,6 +124,21 @@ const MintToken = ({ contractAddress }) => {
     return (
         <div>
             <p>{status}</p>
+
+            {/* Mostrar el link al explorador de la transacción */}
+            {txHash && (
+                <p>
+                    Transaction Explorer:{' '}
+                    <a
+                        href={`https://explorer.zora.energy/tx/${txHash}`} // Ajusta el enlace al explorador según la red
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: 'blue', textDecoration: 'underline' }}>
+                        View on Explorer
+                    </a>
+                </p>
+            )}
+
             {simulationError && (
                 <p style={{ color: 'red' }}>
                     Simulation Error: {simulationError}
@@ -126,6 +146,7 @@ const MintToken = ({ contractAddress }) => {
             )}
         </div>
     )
+
 }
 
 export default MintToken
