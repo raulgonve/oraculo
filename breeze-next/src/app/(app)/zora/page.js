@@ -223,18 +223,20 @@ function ZoraPage() {
                                             )}
 
                                             {/* Botón para generar animación, centrado visualmente */}
-                                            <div className="absolute inset-x-0 bottom-6 flex justify-center">
-                                                <button
-                                                    onClick={
-                                                        handleGenerateAnimation
-                                                    }
-                                                    className="py-2 px-4 bg-white text-gray-800 shadow-md rounded-md transition-transform transform hover:scale-105 focus:outline-none"
-                                                    disabled={isGenerating}>
-                                                    {isGenerating
-                                                        ? 'Generating...'
-                                                        : 'Generate Animation'}
-                                                </button>
-                                            </div>
+                                            {!generatedVideo && ( // Ocultar el botón si el video está generado
+                                                <div className="absolute inset-x-0 bottom-6 flex justify-center">
+                                                    <button
+                                                        onClick={
+                                                            handleGenerateAnimation
+                                                        }
+                                                        className="py-2 px-4 bg-white text-gray-800 shadow-md rounded-md transition-transform transform hover:scale-105 focus:outline-none"
+                                                        disabled={isGenerating}>
+                                                        {isGenerating
+                                                            ? 'Generating...'
+                                                            : 'Generate Animation'}
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -269,6 +271,10 @@ function ZoraPage() {
                                         onTransactionError={
                                             handleTransactionError
                                         }
+                                        contractName={name} // Paso del nombre del contrato
+                                        contractDescription={description} // Paso de la descripción del contrato
+                                        contractImageUrl={generatedImage} // Paso de la URL de la imagen generada
+                                        contractVideoUrl={generatedVideo} // Paso de la URL del video generado
                                     />
                                 </div>
                             )}

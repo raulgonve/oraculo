@@ -8,6 +8,10 @@ const Create1155Contract = ({
     onContractCreated,
     onTransactionError,
     onTransactionConfirmed,
+    contractName, // Recibir el nombre del contrato
+    contractDescription, // Recibir la descripción del contrato
+    contractImageUrl, // Recibir la URL de la imagen del contrato
+    contractVideoUrl, // Recibir la URL del video del contrato
 }) => {
     const chainId = useChainId()
     const { address: loggedInAddress } = useAccount()
@@ -17,7 +21,7 @@ const Create1155Contract = ({
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
     const [isContractCreated, setIsContractCreated] = useState(false)
-    const [isExecuting, setIsExecuting] = useState(false) // Estado para evitar múltiples ejecuciones
+    const [isExecuting, setIsExecuting] = useState(false)
 
     // Obtener el proveedor de MetaMask y configurar walletClient y publicClient
     useEffect(() => {
@@ -44,19 +48,66 @@ const Create1155Contract = ({
         })()
     }, [chainId])
 
+    const uploadMetadataToIpfs = async (
+        contractName,
+        contractDescription,
+        contractImageUrl,
+        contractVideoUrl,
+    ) => {
+        try {
+            // Hacer una solicitud POST a la API de `uploadToIpfs`
+            const response = await fetch('/api/upload-to-ipfs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contractName,
+                    contractDescription,
+                    contractImageUrl,
+                    contractVideoUrl,
+                }),
+            })
+
+            // Verificar si la respuesta es exitosa
+            if (!response.ok) {
+                throw new Error('Failed to upload metadata to IPFS')
+            }
+
+            // Extraer los datos de la respuesta
+            const data = await response.json()
+
+            // Retornar los URIs de los metadatos
+            return {
+                contractMetadataUri: data.contractMetadataUri,
+                tokenMetadataUri: data.tokenMetadataUri,
+            }
+        } catch (error) {
+            console.error('Error uploading metadata:', error)
+            throw error // Lanza el error para manejarlo donde se haga la llamada
+        }
+    }
+
+
     const createContract = async () => {
-        // Verificar si ya se está ejecutando o si el contrato ya se creó o está cargando
         if (isExecuting || loading || isContractCreated) {
-            console.log(
-                'Contract creation or transaction is already in progress',
-            )
             return
         }
 
-        setIsExecuting(true) // Bloquear ejecuciones múltiples
-        setLoading(true) // Iniciar la carga
+        setIsExecuting(true)
+        setLoading(true)
 
         try {
+            // Llamar a la API para subir los metadatos a IPFS
+            const { contractMetadataUri, tokenMetadataUri } =
+                await uploadMetadataToIpfs(
+                    contractName,
+                    contractDescription,
+                    contractImageUrl,
+                    contractVideoUrl,
+                )
+
+            // Continuar con la creación del contrato usando las URIs obtenidas
             const creatorClient = createCreatorClient({
                 chainId,
                 publicClient,
@@ -65,12 +116,11 @@ const Create1155Contract = ({
             const { parameters, contractAddress } =
                 await creatorClient.create1155({
                     contract: {
-                        name: 'testContract20',
-                        uri: 'ipfs.io/ipfs/Qmdj5Lq1LzEFEH3WvstPLcLrnVFxt9n6bV8iGMa9qAeLvW',
+                        name: contractName,
+                        uri: contractMetadataUri, // Usar el hash de los metadatos del contrato subido a IPFS
                     },
                     token: {
-                        tokenMetadataURI:
-                            'ipfs.io/ipfs/QmeD7CBtjZe4Yc3KzfuR5xyvT3oMn2AzGjEXnEbdTht65a',
+                        tokenMetadataURI: tokenMetadataUri, // Usar el hash de los metadatos del token subido a IPFS
                     },
                     account: loggedInAddress,
                 })
@@ -82,7 +132,7 @@ const Create1155Contract = ({
                 onContractCreated(contractAddress)
             }
 
-            // Simular la llamada al contrato antes de enviar la transacción
+            // Simular la transacción antes de ejecutarla
             const simulation = await publicClient.simulateContract({
                 ...parameters,
                 account: loggedInAddress,
@@ -91,11 +141,7 @@ const Create1155Contract = ({
 
             console.log('Simulation result:', simulation)
 
-            if (simulation.error) {
-                throw new Error(`Simulation failed: ${simulation.error}`)
-            }
-
-            // Enviar la transacción si la simulación es exitosa
+            // Escribir el contrato en la blockchain si la simulación es exitosa
             const txHash = await walletClient.writeContract({
                 ...parameters,
                 account: loggedInAddress,
@@ -110,7 +156,6 @@ const Create1155Contract = ({
             })
 
             if (receipt.status === 'success') {
-                console.log('Transaction confirmed:', receipt)
                 if (onTransactionConfirmed) {
                     onTransactionConfirmed(receipt)
                 }
@@ -119,18 +164,17 @@ const Create1155Contract = ({
             }
         } catch (error) {
             console.error('Error creating contract:', error)
-            setError(error.message)
             if (onTransactionError) {
                 onTransactionError(error.message)
             }
         } finally {
-            setLoading(false) // Finalizar la carga
-            setIsExecuting(false) // Desbloquear ejecuciones
+            setLoading(false)
+            setIsExecuting(false)
         }
     }
 
+
     useEffect(() => {
-        // Asegurarse de que solo se ejecute una vez cuando las dependencias estén listas
         if (
             loggedInAddress &&
             walletClient &&
