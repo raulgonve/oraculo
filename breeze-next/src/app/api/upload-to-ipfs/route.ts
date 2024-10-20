@@ -15,6 +15,17 @@ export async function POST(req) {
 
     const tokenJSON = {
       name: `Token NFT for ${contractName}`,
+      description: `Token NFT for ${contractName}`,
+      image: contractImageUrl,
+      animation_url: contractVideoUrl,
+      content: {
+        mime: 'video/mp4',
+        uri: contractVideoUrl,
+      },
+      attributes: {
+        trait_type: 'Contract',
+        value: contractName,
+      },
       thumbnailUrl: contractImageUrl,
       mediaUrl: contractVideoUrl,
     }
