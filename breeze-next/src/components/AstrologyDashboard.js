@@ -18,6 +18,30 @@ import {
     TbZodiacAquarius,
     TbPlanet,
 } from 'react-icons/tb'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import 'swiper/css'
+import 'swiper/css/autoplay'
+import 'swiper/css/pagination'
+import 'swiper/css/navigation'
+
+// Importa los módulos correctamente
+import { Autoplay, Pagination, Navigation } from 'swiper/modules'
+
+// Rutas de las imágenes de los signos del zodiaco
+const zodiacImages = [
+    '/images/aquarius.png',
+    '/images/aries.png',
+    '/images/cancer.png',
+    '/images/capricorn.png',
+    '/images/gemini.png',
+    '/images/leo.png',
+    '/images/libra.png',
+    '/images/pisces.png',
+    '/images/sagittarius.png',
+    '/images/scorpio.png',
+    '/images/taurus.png',
+    '/images/virgo.png',
+]
 
 const AstrologyDashboard = () => {
     const [astralElements, setAstralElements] = useState([])
@@ -85,7 +109,7 @@ const AstrologyDashboard = () => {
                 setAspects(aspectsData)
 
                 setLoading(false)
-                toast.success('Elements and Aspects fetched successfully')
+                // toast.success('Elements and Aspects fetched successfully')
             } catch (error) {
                 toast.error('Failed to fetch data')
                 setLoading(false)
@@ -168,10 +192,34 @@ const AstrologyDashboard = () => {
             <h1 className="text-4xl font-bold text-center text-gray-800 mb-10">
                 Your Astrological Elements and Aspects
             </h1>
+            <div className="w-full mx-auto mb-10">
+                {/* <h3 className="text-2xl font-semibold text-center text-gray-800 mb-4">
+                    Zodiac Signs
+                </h3> */}
+                <Swiper
+                    spaceBetween={20}
+                    slidesPerView={5}
+                    autoplay={{ delay: 3000 }}
+                    pagination={{ clickable: true }}
+                    navigation={true}
+                    modules={[Autoplay, Pagination, Navigation]}>
+                    {zodiacImages.map((src, index) => (
+                        <SwiperSlide key={index}>
+                            <div className="flex-shrink-0 w-full h-56 overflow-hidden rounded-lg shadow-lg">
+                                <img
+                                    src={src}
+                                    alt={`Zodiac Sign Image ${index}`}
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                        </SwiperSlide>
+                    ))}
+                </Swiper>
+            </div>
 
             {/* Title for Astral Elements Section */}
             <h2 className="text-3xl font-bold text-gray-700 mt-8 mb-4 border-b-2 border-gray-300 pb-2">
-                Astrological Elements
+                Your Astrological Elements
             </h2>
             <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
                 {astralElements.map((element, index) => (
@@ -203,7 +251,7 @@ const AstrologyDashboard = () => {
 
             {/* Title for Advanced Elements Section */}
             <h2 className="text-3xl font-bold text-gray-700 mt-12 mb-4 border-b-2 border-gray-300 pb-2">
-                Advanced Elements
+                Your Advanced Elements
             </h2>
             <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
                 {advancedElements.map((element, index) => (
@@ -235,7 +283,7 @@ const AstrologyDashboard = () => {
 
             {/* Title for Aspects Section */}
             <h2 className="text-3xl font-bold text-gray-700 mt-12 mb-4 border-b-2 border-gray-300 pb-2">
-                Astrological Aspects
+                Your Astrological Aspects
             </h2>
             <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
                 {aspects.map((aspect, index) => (

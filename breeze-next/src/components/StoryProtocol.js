@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Modal from 'react-modal'
-import { FaTwitter } from 'react-icons/fa'
+import { FaXTwitter } from 'react-icons/fa6'
 
 export default function StoryProtocol({ user }) {
     const [isLoading, setIsLoading] = useState(false)
@@ -125,6 +125,15 @@ export default function StoryProtocol({ user }) {
         setModalIsOpen(false)
     }
 
+    const handleShareOnX = () => {
+        const tweetText = encodeURIComponent(
+            `Check out this NFT created as an IP asset on Story Protocol: ${nftData.explorerUrl} #StoryProtocol`,
+        )
+        const tweetUrl = encodeURIComponent(nftData.ipMetadataUri)
+        const shareUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${tweetUrl}&via=StoryProtocol`
+        window.open(shareUrl, '_blank')
+    }
+
     return (
         <div className="flex flex-col items-center">
             <h1 className="text-4xl font-bold text-gray-800 mb-4">
@@ -173,7 +182,7 @@ export default function StoryProtocol({ user }) {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="py-2 px-4 bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold rounded-md shadow-lg hover:bg-blue-700 transform hover:scale-110 transition-all duration-300">
-                                    <FaTwitter className="text-xl" />
+                                    <FaXTwitter className="text-xl" />
                                 </a>
                             </div>
                         </div>
@@ -245,11 +254,17 @@ export default function StoryProtocol({ user }) {
                                 View on Explorer
                             </a>
                         </p>
-                        <div className="flex justify-center">
+                        {/* Botón para compartir en X */}
+                        <div className="flex justify-center mt-4 space-x-4">
                             <button
                                 onClick={closeModal}
                                 className="mt-6 py-2 px-4 bg-red-500 text-white rounded-md shadow-md hover:bg-red-600 transition-all duration-300 flex justify-center">
                                 Close
+                            </button>
+                            <button
+                                onClick={handleShareOnX}
+                                className="mt-6 py-2 px-4 bg-black text-white rounded-md shadow-lg hover:bg-gray-800 transition-all duration-300">
+                                <FaXTwitter className="text-xl" />
                             </button>
                         </div>
                     </div>
