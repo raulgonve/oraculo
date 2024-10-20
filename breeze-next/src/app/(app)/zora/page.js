@@ -8,11 +8,47 @@ function ZoraPage() {
     const [metadata, setMetadata] = useState('')
     const [file, setFile] = useState(null)
     const [filePreview, setFilePreview] = useState('')
+    const [name, setName] = useState('') // Estado para el nombre
+    const [description, setDescription] = useState('') // Estado para la descripción
     const [isMintingReady, setIsMintingReady] = useState(false)
     const [isTransactionConfirmed, setIsTransactionConfirmed] = useState(false)
     const [errorMessage, setErrorMessage] = useState(null)
-    const [showMintToken, setShowMintToken] = useState(false) // Estado para mostrar el componente MintToken
+    const [showMintToken, setShowMintToken] = useState(false)
+    const [isGenerating, setIsGenerating] = useState(false) // Estado para generar imagen o animación
+    const [generatedImage, setGeneratedImage] = useState(null) // Imagen generada
+    const [generatedVideo, setGeneratedVideo] = useState(null) // Video generado
 
+    // Obtener los datos del usuario y su signo solar
+    const fetchUserAstroData = async () => {
+        try {
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/horoscope-data`,
+                {
+                    method: 'GET',
+                    credentials: 'include',
+                },
+            )
+            if (response.ok) {
+                const data = await response.json()
+                if (data.sun) {
+                    return {
+                        sun: data.sun, // Retorna solo el signo solar
+                    }
+                } else {
+                    setErrorMessage('Unable to fetch sun sign.')
+                    return null
+                }
+            } else {
+                setErrorMessage('Failed to fetch user data.')
+                return null
+            }
+        } catch (error) {
+            setErrorMessage('Error fetching user data.')
+            return null
+        }
+    }
+
+    // Llamar a la API para generar la animación según el signo solar del usuario
     // Manejar el archivo multimedia y previsualizarlo
     const handleFileChange = event => {
         const selectedFile = event.target.files[0]
@@ -24,9 +60,47 @@ function ZoraPage() {
         reader.readAsDataURL(selectedFile)
     }
 
+    const handleGenerateAnimation = async () => {
+        setIsGenerating(true)
+        setErrorMessage(null)
+
+        try {
+            // Obtener los datos astrológicos del usuario primero
+            const astroData = await fetchUserAstroData()
+
+            if (!astroData?.sun) {
+                setErrorMessage('Sun sign not available.')
+                setIsGenerating(false)
+                return
+            }
+
+            // Llamada a la API para generar la animación
+            const response = await fetch('/api/create-animation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    sunSign: astroData.sun,
+                }),
+            })
+
+            if (response.ok) {
+                const { videoUrl, imageUrl } = await response.json()
+                setGeneratedVideo(videoUrl) // Almacenar el video generado
+                setGeneratedImage(imageUrl) // Almacenar la imagen generada
+            } else {
+                setErrorMessage('Failed to generate animation.')
+            }
+        } catch (error) {
+            setErrorMessage('Error generating animation.')
+        } finally {
+            setIsGenerating(false)
+        }
+    }
     const handleCreateContract = () => {
         setIsMintingReady(true)
-        setErrorMessage(null) // Limpiar error antes de intentar crear un nuevo contrato
+        setErrorMessage(null)
     }
 
     const handleContractCreated = address => {
@@ -43,7 +117,6 @@ function ZoraPage() {
     }
 
     const handleMintTokenClick = () => {
-        // Solo mostrar el componente MintToken si la transacción fue confirmada y hay una contractAddress
         if (isTransactionConfirmed && contractAddress) {
             setShowMintToken(true)
         } else {
@@ -64,53 +137,123 @@ function ZoraPage() {
                             </h1>
                             <p className="text-lg text-gray-600 text-center mb-6">
                                 Upload a file and metadata to create your token,
-                                then mint it on the blockchain!
+                                then mint it on Zora!
                             </p>
 
-                            {/* Subir archivo multimedia */}
-                            <div className="w-full max-w-sm">
-                                <label className="block text-gray-700 text-sm font-bold mb-2">
-                                    Upload Media File:
-                                </label>
-                                <input
-                                    type="file"
-                                    onChange={handleFileChange}
-                                    className="w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                                {filePreview && (
-                                    <div className="mt-4">
-                                        <p className="text-gray-700 mb-2">
-                                            File Preview:
-                                        </p>
-                                        <img
-                                            src={filePreview}
-                                            alt="File preview"
-                                            className="w-full h-auto rounded-md shadow-md"
+                            {/* Cuadro para subir o generar imagen */}
+                            <div className="flex flex-col items-center w-full">
+                                <div className="max-w-lg w-full bg-white shadow-lg p-6 rounded-lg">
+                                    {/* Nombre */}
+                                    <div className="mb-6">
+                                        <input
+                                            type="text"
+                                            value={name}
+                                            onChange={e =>
+                                                setName(e.target.value)
+                                            }
+                                            placeholder="name..."
+                                            className="w-full py-2 px-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
-                                )}
-                            </div>
 
-                            {/* Input para la metadata */}
-                            <div className="w-full max-w-sm mt-6">
-                                <label className="block text-gray-700 text-sm font-bold mb-2">
-                                    Enter Metadata:
-                                </label>
-                                <textarea
-                                    value={metadata}
-                                    onChange={e => setMetadata(e.target.value)}
-                                    placeholder="Enter metadata in JSON format"
-                                    className="w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                            </div>
+                                    {/* Descripción */}
+                                    <div className="mb-6">
+                                        <textarea
+                                            value={description}
+                                            onChange={e =>
+                                                setDescription(e.target.value)
+                                            }
+                                            placeholder="description..."
+                                            className="w-full py-2 px-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
 
-                            {/* Botón para crear contrato */}
-                            <div className="w-full max-w-sm mt-6">
-                                <button
-                                    onClick={handleCreateContract}
-                                    className="w-full py-3 px-6 bg-gradient-to-r from-teal-500 to-blue-600 text-white rounded-md font-semibold shadow-md transform hover:scale-110 hover:shadow-xl transition-all duration-500 ease-in-out focus:outline-none focus:ring-4 focus:ring-blue-300">
-                                    Create Contract
-                                </button>
+                                    {/* Cuadro para subir o generar imagen */}
+                                    <div className="mb-6">
+                                        <div
+                                            className="relative border-2 border-dashed border-gray-300 rounded-lg text-center"
+                                            style={{
+                                                height: generatedVideo
+                                                    ? 'auto'
+                                                    : '300px', // Ajusta el alto automáticamente si hay video
+                                                width: '100%',
+                                            }}>
+                                            {/* Vista previa de la imagen o video generados */}
+                                            {generatedVideo ? (
+                                                <video
+                                                    src={generatedVideo}
+                                                    controls
+                                                    className="w-full h-auto rounded-md"
+                                                    style={{ zIndex: 10 }} // Elevar el video en el z-index
+                                                />
+                                            ) : generatedImage ? (
+                                                <img
+                                                    src={generatedImage}
+                                                    alt="Preview"
+                                                    className="w-full h-auto mb-4 rounded-md"
+                                                />
+                                            ) : filePreview ? (
+                                                <img
+                                                    src={filePreview}
+                                                    alt="Preview"
+                                                    className="w-full h-auto mb-4 rounded-md"
+                                                />
+                                            ) : (
+                                                <div>
+                                                    <p className="text-gray-600">
+                                                        Drag & drop or click to
+                                                    </p>
+                                                    <strong>
+                                                        Upload Image
+                                                    </strong>
+                                                    <p className="text-gray-400">
+                                                        minimum 1024x1024 .jpg,
+                                                        .png, .gif, mp4
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {/* Input para subir archivo: Mostrar solo si no hay video */}
+                                            {!generatedVideo && (
+                                                <input
+                                                    type="file"
+                                                    onChange={handleFileChange}
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                />
+                                            )}
+
+                                            {/* Botón para generar animación, centrado visualmente */}
+                                            <div className="absolute inset-x-0 bottom-6 flex justify-center">
+                                                <button
+                                                    onClick={
+                                                        handleGenerateAnimation
+                                                    }
+                                                    className="py-2 px-4 bg-white text-gray-800 shadow-md rounded-md transition-transform transform hover:scale-105 focus:outline-none"
+                                                    disabled={isGenerating}>
+                                                    {isGenerating
+                                                        ? 'Generating...'
+                                                        : 'Generate Animation'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Mostrar mensaje de error si ocurre */}
+                                    {errorMessage && (
+                                        <div className="mt-6 text-red-600">
+                                            {errorMessage}
+                                        </div>
+                                    )}
+
+                                    {/* Botón para crear contrato */}
+                                    <div className="w-full mt-6 flex justify-center">
+                                        <button
+                                            onClick={handleCreateContract}
+                                            className="py-3 px-6 bg-gradient-to-r from-teal-500 to-blue-600 text-white rounded-md font-semibold shadow-md transform hover:scale-110 hover:shadow-xl transition-all duration-500 ease-in-out focus:outline-none focus:ring-4 focus:ring-blue-300">
+                                            Create Contract
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Componente para crear contrato */}
