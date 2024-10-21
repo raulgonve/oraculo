@@ -1,7 +1,11 @@
 # Oracle AI
 
 Oracle AI is an innovative astrology platform that combines advanced technologies to deliver a personalized, engaging, and immersive astrological experience. Users can generate their natal (astral) chart, explore detailed interpretations, receive daily horoscopes, chat with an AI astrology expert, and even create NFTs from astrology-based images and videos.
-![AI Video Generation](public/assets/screenshots/image-to-vide.mp4)
+
+
+https://github.com/user-attachments/assets/567e186c-757b-423e-a452-c4b65d7b1bf8
+
+
 
 ## Project Overview
 
@@ -97,9 +101,11 @@ Here are some screenshots of the main modules of Oracle AI:
 
 - **Astral NFT**: Generate and Register the NFT as an IP Asset with Livepeer and StoryProtocol.
   ![Astral NFT](public/assets/screenshots/nft.png)
-  ![Astral NFT](public/assets/screenshots/sp1.png)
-  ![Astral NFT](public/assets/screenshots/sp2.png)
-  ![Astral NFT](public/assets/screenshots/sp3.png)
+  <img width="1507" alt="sp1" src="https://github.com/user-attachments/assets/7c23aff2-f2a1-4ba8-85fd-79f47f1ea96e">
+  <img width="1496" alt="sp2" src="https://github.com/user-attachments/assets/4774cb86-8d41-4ea6-a4db-b9c67411082e">
+  <img width="1499" alt="sp3" src="https://github.com/user-attachments/assets/a5c00592-85d5-4c55-9c78-7d9a40fbb117">
+    https://explorer.story.foundation/ipa/0x60B038ECE510fcc1BB0c1a33603d330f20fFe38B
+
   
 
 - **Zora**: Create ERC-1155 contracts, mint tokens, and generate videos using Livepeer.
@@ -108,3 +114,4 @@ Here are some screenshots of the main modules of Oracle AI:
 
 - **SwarmZero**: Generate images and videos and upload them directly to YouTube using SwarmZero.
   ![SwarmZero](public/assets/screenshots/swarmzero.png)
+  https://www.youtube.com/watch?v=TIpPNsCQtK0
