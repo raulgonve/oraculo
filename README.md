@@ -1,10 +1,11 @@
 # Oracle AI
 
-Oracle AI is an advanced astrology platform that allows users to generate their natal (astral) chart and explore in-depth interpretations of their astrological elements. It also includes features to generate daily horoscopes, chat with an AI expert in astrology, and even create NFTs from astrology-based images and videos.
+Oracle AI is an innovative astrology platform that combines advanced technologies to deliver a personalized, engaging, and immersive astrological experience. Users can generate their natal (astral) chart, explore detailed interpretations, receive daily horoscopes, chat with an AI astrology expert, and even create NFTs from astrology-based images and videos.
+![AI Video Generation](public/assets/screenshots/image-to-vide.mp4)
 
 ## Project Overview
 
-The project centers around the generation of the user's astral chart, providing a detailed summary of their chart along with explanations of each astrological element, aspects, and advanced elements. Additionally, users can generate their daily horoscope and chat with an AI-powered astrology expert, "Astrobot," to ask questions or even generate images related to their conversations.
+Oracle AI focuses on generating users’ astral charts, providing a thorough breakdown of each astrological element, aspect, and advanced feature of their chart. The platform also offers daily horoscope generation and the ability to chat with "Astrobot," an AI-powered expert in astrology. Users can interact with Astrobot to ask questions, get astrological insights, and even generate images from their conversations. Moreover, Oracle AI integrates blockchain technology to allow users to turn their personalized astrology-based images and videos into NFTs.
 
 ### Modules
 
@@ -12,7 +13,7 @@ The project centers around the generation of the user's astral chart, providing 
 - **Astral Chart**: Allows users to generate their complete astral chart, and it provides an audio summary of the chart.
 - **Astrobot**: An AI-powered expert in astrology that can chat with users, answer their astrological questions, and generate related images based on their conversations.
 - **Horoscope**: A section where users can generate their daily horoscope based on their natal chart.
-- **Astral NFT**: Users can generate images based on their zodiac sign, mint them as NFTs using Livepeer for image generation and Story Protocol for the minting process.
+- **Astral NFT**: Users can generate images based on their zodiac sign and register the NFT as an IP Asset using Livepeer for image generation and Story Protocol for the NFT process.
 - **Zora**: Users can create ERC-1155 contracts and mint tokens. Livepeer is used to generate images, which are turned into videos, then the token is minted on the Zora blockchain.
 - **SwarmZero**: We successfully implemented the Livepeer YouTube Video Generator with SwarmZero, following the process of generating and uploading videos to YouTube using AI agents and decentralized networks. By leveraging Livepeer’s decentralized video platform, these agents collaborate to create and manage videos without manual intervention, with results displayed in the SwarmZero section. This allows for exploring automated and decentralized solutions for media content creation and distribution.
 
@@ -94,11 +95,16 @@ Here are some screenshots of the main modules of Oracle AI:
 - **Horoscope**: Daily horoscope generation based on the user's natal chart.
   ![Horoscope](public/assets/screenshots/horoscope.png)
 
-- **Astral NFT**: Generate and mint NFTs using images created with Livepeer.
+- **Astral NFT**: Generate and Register the NFT as an IP Asset with Livepeer and StoryProtocol.
   ![Astral NFT](public/assets/screenshots/nft.png)
+  ![Astral NFT](public/assets/screenshots/sp1.png)
+  ![Astral NFT](public/assets/screenshots/sp2.png)
+  ![Astral NFT](public/assets/screenshots/sp3.png)
+  
 
 - **Zora**: Create ERC-1155 contracts, mint tokens, and generate videos using Livepeer.
   ![Zora](public/assets/screenshots/zora.png)
+  https://zora.co/collect/zora:0xffb9f928724e2578d8b56b0f9dae34dc65a707e5/1
 
 - **SwarmZero**: Generate images and videos and upload them directly to YouTube using SwarmZero.
   ![SwarmZero](public/assets/screenshots/swarmzero.png)
