@@ -191,11 +191,17 @@ export default function AstrologyForm({ user }) {
     }
 
     const formatBirthDetails = (birthDate, birthTime) => {
-        // Convert birthDate to "YYYY-MM-DD" (ISO 8601)
-        const originalDate = new Date(birthDate)
-        const formattedDate = originalDate.toISOString().split('T')[0]
+        // Formatear la fecha usando métodos locales
+        const formattedDate = `${birthDate.getFullYear()}-${(
+            birthDate.getMonth() + 1
+        )
+            .toString()
+            .padStart(2, '0')}-${birthDate
+            .getDate()
+            .toString()
+            .padStart(2, '0')}`
 
-        // Convert birthTime to 12-hour format with AM/PM
+        // Convertir birthTime a formato de 12 horas con AM/PM
         const timeParts = birthTime.split(':')
         let hours = parseInt(timeParts[0])
         const minutes = timeParts[1]
