@@ -88,7 +88,7 @@ For this hackathon, we’re showcasing several cutting-edge integrations:
 Here are some screenshots of the main modules of Oracle AI:
 
 - **Dashboard**: Summary view of the user's astral chart.
-  ![Dashboard](public/assets/screenshots/dashboard.png)
+<img width="1508" alt="dash" src="https://github.com/user-attachments/assets/1c817bf0-7a93-441a-adda-0845fd9baf82">
 
 - **Astral Chart**: The user's complete astral chart with an audio summary.
   ![Astral Chart](public/assets/screenshots/astralchart.png)
