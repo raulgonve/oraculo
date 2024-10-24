@@ -1,0 +1,23 @@
+{
+	"folders": [
+		{
+			"path": "../../event-connect"
+		},
+		{
+			"path": "../../../../Desktop/bootcamp-ai"
+		},
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../workshop-pipeline-exploration"
+		},
+		{
+			"path": "../../examples/swarms/livepeer_youtube_swarm"
+		},
+		{
+			"path": "../../example-agents"
+		}
+	],
+	"settings": {}
+}

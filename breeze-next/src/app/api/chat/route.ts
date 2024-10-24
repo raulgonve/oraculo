@@ -1,24 +1,31 @@
-import OpenAI from 'openai';
+import OpenAI from 'openai'
 
+// Initialize OpenAI with API key from environment variables
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY, // Asegúrate de usar tu API Key
-});
-const assistantId = process.env.ASSISTANT_ID_CHATBOT;
-const vectorId = process.env.VECTOR_STORE_ID;
+    apiKey: process.env.OPENAI_API_KEY, // Ensure you are using your API Key
+})
 
+// Get assistant and vector store IDs from environment variables
+const assistantId = process.env.ASSISTANT_ID_CHATBOT
+const vectorId = process.env.VECTOR_STORE_ID
+
+// If the assistant ID is missing, throw an error
 if (!assistantId) {
-    throw new Error('The ASSISTANT_ID is not defined in the environment variables');
+    throw new Error(
+        'The ASSISTANT_ID is not defined in the environment variables',
+    )
 }
 
+// POST request handler
 export async function POST(req: Request): Promise<Response> {
     try {
-        // Obtener los datos enviados en la solicitud
-        const { messages,userAstroData } = await req.json(); // Extraer el array de mensajes desde el cuerpo de la solicitud
+        // Parse the request body to extract messages and userAstroData
+        const { messages, userAstroData } = await req.json()
 
-        // agregar a messages los datos del usuario userAstroData
+        // Append userAstroData to the messages array as user input
         messages.push({
             role: 'user',
-            content: `Here my personal data,
+            content: `Here is my personal data,
             Name: ${userAstroData.name},
             Date of Birth: ${userAstroData.birthDate},
             Time of Birth: ${userAstroData.birthTime},
@@ -26,71 +33,72 @@ export async function POST(req: Request): Promise<Response> {
             Sun Sign: ${userAstroData.sun},
             Moon Sign: ${userAstroData.moon},
             Rising Sign: ${userAstroData.ascendant}.`,
-        });
+        })
 
-        // Actualizar el asistente para utilizar el vector store (si es necesario)
+        // Update the assistant to use the vector store for file search if necessary
         await openai.beta.assistants.update(assistantId, {
             tool_resources: {
                 file_search: {
-                    vector_store_ids: [vectorId],
+                    vector_store_ids: [vectorId], // Use vector store to enhance responses
                 },
             },
-        });
+        })
 
-        // Crear el thread con todos los mensajes del usuario y la IA
+        // Create a thread with the user's messages and previous conversations
         const thread = await openai.beta.threads.create({
             messages: messages,
-        });
+        })
 
-        // Crear un stream para enviar la respuesta al cliente a medida que se genera
+        // Create a readable stream to return response chunks as they are generated
         const stream = new ReadableStream({
             async start(controller) {
                 openai.beta.threads.runs
                     .stream(thread.id, {
-                        assistant_id: assistantId,
+                        assistant_id: assistantId, // Use the assistant for the thread
                     })
-                    .on('textDelta', (textDelta) => {
-                        // Escribir cada fragmento de texto en el stream
-                        const chunk = textDelta.value;
+                    .on('textDelta', textDelta => {
+                        // For each text fragment (delta), encode it and add to stream
+                        const chunk = textDelta.value
                         if (chunk) {
-                            // Convertir el Markdown a HTML si es necesario
-                            const htmlChunk = convertMarkdownToHtml(chunk);
-                            controller.enqueue(new TextEncoder().encode(htmlChunk));
+                            const htmlChunk = convertMarkdownToHtml(chunk) // Convert Markdown to HTML if needed
+                            controller.enqueue(
+                                new TextEncoder().encode(htmlChunk),
+                            )
                         }
                     })
                     .on('messageDone', () => {
-                        // Cerrar el stream cuando el mensaje esté completo
-                        controller.close();
+                        // Close the stream once the message is fully generated
+                        controller.close()
                     })
-                    .on('error', (error) => {
-                        console.error('Error during streaming:', error);
-                        controller.error(error);
-                    });
+                    .on('error', error => {
+                        // Handle any errors that occur during streaming
+                        console.error('Error during streaming:', error)
+                        controller.error(error)
+                    })
             },
-        });
+        })
 
-        // Devolver la respuesta como un streaming
+        // Return the response as an HTML stream with appropriate headers
         return new Response(stream, {
             headers: {
                 'Content-Type': 'text/html; charset=utf-8',
                 'Cache-Control': 'no-cache',
             },
-        });
+        })
     } catch (error) {
-        // Registrar el error si ocurre alguno durante el proceso
-        console.error('Error generating response:', error);
-        return new Response('Failed to generate response', { status: 500 });
+        // Log any errors that occur during the process
+        console.error('Error generating response:', error)
+        return new Response('Failed to generate response', { status: 500 })
     }
 }
 
-// Función para convertir Markdown a HTML
+// Function to convert Markdown to HTML for easier display
 function convertMarkdownToHtml(markdown: string): string {
-    // Ejemplo simple de conversión de Markdown a HTML
     return markdown
-        .replace(/^### (.*$)/gim, '<h4>$1</h4>')
-        .replace(/^## (.*$)/gim, '<h1>$1</h1>')
-        .replace(/^# (.*$)/gim, '<h2>$1</h2>')
-        .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
-        .replace(/\*(.*)\*/gim, '<em>$1</em>')
-        .replace(/\n$/gim, '<br />');
+        .replace(/^### (.*$)/gim, '<h4>$1</h4>') // Convert ### to <h4>
+        .replace(/^## (.*$)/gim, '<h1>$1</h1>') // Convert ## to <h1>
+        .replace(/^# (.*$)/gim, '<h2>$1</h2>') // Convert # to <h2>
+        .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>') // Bold text
+        .replace(/\*(.*)\*/gim, '<em>$1</em>') // Italic text
+        .replace(/\n$/gim, '<br />') // Line breaks
 }

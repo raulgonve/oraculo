@@ -1,20 +1,25 @@
 import OpenAI from 'openai'
 
+// Initialize OpenAI with your API key from environment variables
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY, // Asegúrate de usar tu API Key
+    apiKey: process.env.OPENAI_API_KEY, // Make sure to use your API Key
 })
+
+// Get the assistant ID and vector store ID from environment variables
 const assistantId = process.env.ASSISTANT_ID
 const vectorId = process.env.VECTOR_STORE_ID
 
+// Throw an error if the assistant ID is not set
 if (!assistantId) {
     throw new Error('The ASSISTANT is not defined in the environment variables')
 }
 
 export async function POST(req: Request): Promise<Response> {
     try {
-        // Obtener los datos enviados en la solicitud
+        // Extract the user's astrological data from the request body
         const userAstroData = await req.json()
 
+        // Validate that the necessary data is provided
         if (
             !userAstroData ||
             !userAstroData.birthDate ||
@@ -24,15 +29,16 @@ export async function POST(req: Request): Promise<Response> {
             return new Response('User data is incomplete', { status: 400 })
         }
 
-        // Actualizar el asistente para utilizar el vector store
+        // Update the assistant to use the vector store for enhanced responses
         await openai.beta.assistants.update(assistantId, {
             tool_resources: {
                 file_search: {
-                    vector_store_ids: [vectorId],
+                    vector_store_ids: [vectorId], // Specify the vector store ID
                 },
             },
         })
 
+        // Create a thread with the user's message containing their astrological data
         const thread = await openai.beta.threads.create({
             messages: [
                 {
@@ -47,18 +53,19 @@ export async function POST(req: Request): Promise<Response> {
                 },
             ],
         })
-        // Crear un stream para enviar la respuesta al cliente a medida que se genera
+
+        // Create a stream to send the response to the client as it is generated
         const stream = new ReadableStream({
             async start(controller) {
                 openai.beta.threads.runs
                     .stream(thread.id, {
-                        assistant_id: assistantId,
+                        assistant_id: assistantId, // Use the assistant ID for the thread
                     })
                     .on('textDelta', textDelta => {
-                        // Escribir cada fragmento de texto en el stream
+                        // Process each text chunk as it is generated
                         const chunk = textDelta.value
                         if (chunk) {
-                            // Convertir el Markdown a HTML aquí si es necesario
+                            // Convert Markdown to HTML if necessary
                             const htmlChunk = convertMarkdownToHtml(chunk)
                             controller.enqueue(
                                 new TextEncoder().encode(htmlChunk),
@@ -66,38 +73,39 @@ export async function POST(req: Request): Promise<Response> {
                         }
                     })
                     .on('messageDone', () => {
-                        // Cerrar el stream cuando el mensaje esté completo
+                        // Close the stream when the message is fully generated
                         controller.close()
                     })
                     .on('error', error => {
+                        // Handle any errors that occur during the streaming
                         console.error('Error during streaming:', error)
                         controller.error(error)
                     })
             },
         })
 
-        // Devolver la respuesta como un streaming
+        // Return the response as an HTML stream
         return new Response(stream, {
             headers: {
                 'Content-Type': 'text/html; charset=utf-8',
-                'Cache-Control': 'no-cache',
+                'Cache-Control': 'no-cache', // Ensure the response isn't cached
             },
         })
     } catch (error) {
-        // Registrar el error si ocurre alguno durante el proceso
+        // Log any errors and return an error response
         console.error('Error generating horoscope:', error)
         return new Response('Failed to generate horoscope', { status: 500 })
     }
 }
 
-// Función para convertir Markdown a HTML
+// Function to convert Markdown to HTML
 function convertMarkdownToHtml(markdown: string): string {
-    // Ejemplo simple de conversión de Markdown a HTML
+    // Basic Markdown to HTML conversion
     return markdown
-        .replace(/^### (.*$)/gim, '<h4>$1</h4>')
-        .replace(/^## (.*$)/gim, '<h1>$1</h1>')
-        .replace(/^# (.*$)/gim, '<h2>$1</h2>')
-        .replace(/^\*\*(.*)\*\*/gim, '<strong>$1</strong>')
-        .replace(/\*(.*)\*/gim, '<em>$1</em>')
-        .replace(/\n$/gim, '<br />')
+        .replace(/^### (.*$)/gim, '<h4>$1</h4>') // Convert ### to <h4>
+        .replace(/^## (.*$)/gim, '<h1>$1</h1>') // Convert ## to <h1>
+        .replace(/^# (.*$)/gim, '<h2>$1</h2>') // Convert # to <h2>
+        .replace(/^\*\*(.*)\*\*/gim, '<strong>$1</strong>') // Bold text
+        .replace(/\*(.*)\*/gim, '<em>$1</em>') // Italic text
+        .replace(/\n$/gim, '<br />') // Line breaks
 }

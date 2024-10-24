@@ -7,10 +7,10 @@ import 'swiper/css/pagination'
 import 'swiper/css/navigation'
 import { FaYoutube, FaTwitter } from 'react-icons/fa'
 
-// Importa los módulos correctamente
+// Import Swiper modules
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
 
-// Rutas de las imágenes y videos
+// Image and video paths for the Swiper slides
 const imagePaths = [
     '/images/leo_constellation.png',
     '/images/leo_crown_of_flames.png',
@@ -30,10 +30,11 @@ const videoPaths = [
 ]
 
 export default function SwarmZero() {
-    const [hoveredVideo, setHoveredVideo] = useState(null)
+    const [hoveredVideo, setHoveredVideo] = useState(null) // State to track which video is being hovered
 
     return (
         <div className="flex flex-col items-center p-8 w-[90%] max-w-5xl mx-auto">
+            {/* Header for the generated YouTube video section */}
             <h2 className="text-4xl font-bold text-center text-gray-800 mb-6">
                 YouTube Video Generated Automatically Using SwarmZero and
                 Livepeer
@@ -50,7 +51,7 @@ export default function SwarmZero() {
                 and distribution across multiple platforms.
             </p>
 
-            {/* Carrusel de Imágenes */}
+            {/* Image carousel */}
             <div className="w-full max-w-3xl mx-auto mb-10">
                 <h3 className="text-2xl font-semibold text-center text-gray-800 mb-4">
                     Generated Images
@@ -62,6 +63,7 @@ export default function SwarmZero() {
                     pagination={{ clickable: true }}
                     navigation={true}
                     modules={[Autoplay, Pagination, Navigation]}>
+                    {/* Loop through the image paths and display each image in a Swiper slide */}
                     {imagePaths.map((src, index) => (
                         <SwiperSlide key={index}>
                             <div className="flex-shrink-0 w-full h-56 overflow-hidden rounded-lg shadow-lg">
@@ -76,7 +78,7 @@ export default function SwarmZero() {
                 </Swiper>
             </div>
 
-            {/* Carrusel de Videos */}
+            {/* Video carousel */}
             <div className="w-full max-w-5xl mx-auto mb-10">
                 <h3 className="text-2xl font-semibold text-center text-gray-800 mb-4">
                     Generated Videos
@@ -88,6 +90,7 @@ export default function SwarmZero() {
                     pagination={{ clickable: true }}
                     navigation={true}
                     modules={[Autoplay, Pagination, Navigation]}>
+                    {/* Loop through the video paths and display each video in a Swiper slide */}
                     {videoPaths.map((src, index) => (
                         <SwiperSlide key={index}>
                             <div
@@ -99,8 +102,8 @@ export default function SwarmZero() {
                                     muted
                                     loop
                                     className="w-full h-full object-cover"
-                                    autoPlay={hoveredVideo === index}
-                                    controls={hoveredVideo === index}
+                                    autoPlay={hoveredVideo === index} // Play the video on hover
+                                    controls={hoveredVideo === index} // Show controls on hover
                                 />
                             </div>
                         </SwiperSlide>
@@ -108,13 +111,14 @@ export default function SwarmZero() {
                 </Swiper>
             </div>
 
+            {/* Header for the final YouTube video */}
             <div className="w-full max-w-5xl mx-auto mb-10 mt-10">
                 <h2 className="text-4xl font-semibold text-center text-gray-800 mb-4">
                     Final Video
                 </h2>
             </div>
 
-            {/* Video final de YouTube */}
+            {/* Embedded YouTube video */}
             <div className="w-full max-w-md mx-auto shadow-lg rounded-lg overflow-hidden bg-white transform hover:scale-105 transition-transform duration-300 ease-in-out">
                 <div className="relative pb-[177%]">
                     <iframe
@@ -126,37 +130,29 @@ export default function SwarmZero() {
                         allowFullScreen></iframe>
                 </div>
             </div>
+
+            {/* Buttons for sharing the video on YouTube and Twitter */}
             <div className="flex justify-center items-center space-x-6 mt-6">
-                {/* Botón para ver en YouTube */}
+                {/* Button to watch the video on YouTube */}
                 <a
                     href="https://www.youtube.com/watch?v=TIpPNsCQtK0"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center space-x-2 py-2 px-6 bg-gradient-to-r from-red-600 to-orange-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 hover:scale-110 hover:shadow-xl transition-all duration-500 ease-in-out">
-                    <FaYoutube className="text-xl" /> {/* Ícono de YouTube */}
+                    <FaYoutube className="text-xl" /> {/* YouTube icon */}
                     <span>Watch on YouTube</span>
                 </a>
 
-                {/* Ícono para compartir en X (Twitter) */}
+                {/* Button to share the video on X (formerly Twitter) */}
                 <a
                     href={`https://twitter.com/intent/tweet?url=https://www.youtube.com/watch?v=TIpPNsCQtK0&text=Check%20out%20this%20AI-generated%20video%20using%20SwarmZero%20and%20Livepeer!`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center space-x-2 py-2 px-6 bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 shadow-md transform hover:scale-110 hover:shadow-xl transition-all duration-500 ease-in-out ">
-                    <FaTwitter className="text-xl" />{' '}
-                    {/* Ícono de X (Twitter) */}
+                    <FaTwitter className="text-xl" /> {/* X (Twitter) icon */}
                     <span>Share on X</span>
                 </a>
             </div>
-            {/* <div className="flex justify-center mt-6">
-                <a
-                    href="https://docs.swarmzero.ai/examples/swarms/livepeer-youtube-video-generator-swarm"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="py-2 px-6 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition-colors duration-300">
-                    Learn More
-                </a>
-            </div> */}
         </div>
     )
 }

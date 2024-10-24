@@ -1,24 +1,26 @@
 'use client'
 import { useState } from 'react'
-import Create1155Contract from '../../../components/nft/Create1155Contract'
-import MintToken from '../../../components/nft/MintToken'
+import Create1155Contract from '../../../components/zora/Create1155Contract'
+import MintToken from '../../../components/zora/MintToken'
 
 function ZoraPage() {
-    const [contractAddress, setContractAddress] = useState('')
-    const [metadata, setMetadata] = useState('')
-    const [file, setFile] = useState(null)
-    const [filePreview, setFilePreview] = useState('')
-    const [name, setName] = useState('') // Estado para el nombre
-    const [description, setDescription] = useState('') // Estado para la descripción
-    const [isMintingReady, setIsMintingReady] = useState(false)
-    const [isTransactionConfirmed, setIsTransactionConfirmed] = useState(false)
-    const [errorMessage, setErrorMessage] = useState(null)
-    const [showMintToken, setShowMintToken] = useState(false)
-    const [isGenerating, setIsGenerating] = useState(false) // Estado para generar imagen o animación
-    const [generatedImage, setGeneratedImage] = useState(null) // Imagen generada
-    const [generatedVideo, setGeneratedVideo] = useState(null) // Video generado
+    const [contractAddress, setContractAddress] = useState('') // Contract address after creation
+    const [metadata, setMetadata] = useState('') // Metadata for the token
+    const [file, setFile] = useState(null) // File for uploading
+    const [filePreview, setFilePreview] = useState('') // File preview before uploading
+    const [name, setName] = useState('') // State for contract name
+    const [description, setDescription] = useState('') // State for contract description
+    const [isMintingReady, setIsMintingReady] = useState(false) // Check if minting is ready
+    const [isTransactionConfirmed, setIsTransactionConfirmed] = useState(false) // Confirm if transaction succeeded
+    const [errorMessage, setErrorMessage] = useState(null) // Store error messages
+    const [showMintToken, setShowMintToken] = useState(false) // Show MintToken component
+    const [isGenerating, setIsGenerating] = useState(false) // State to manage loading during image or animation generation
+    const [generatedImage, setGeneratedImage] = useState(null) // Store the generated image
+    const [generatedVideo, setGeneratedVideo] = useState(null) // Store the generated video
+    const [isCreatingContract, setIsCreatingContract] = useState(false) // State for contract creation loading
+    const [txHash, setTxHash] = useState(null) // Store transaction hash for explorer link
 
-    // Obtener los datos del usuario y su signo solar
+    // Fetch user astrological data and their sun sign
     const fetchUserAstroData = async () => {
         try {
             const response = await fetch(
@@ -32,7 +34,7 @@ function ZoraPage() {
                 const data = await response.json()
                 if (data.sun) {
                     return {
-                        sun: data.sun, // Retorna solo el signo solar
+                        sun: data.sun, // Return only the sun sign
                     }
                 } else {
                     setErrorMessage('Unable to fetch sun sign.')
@@ -48,8 +50,7 @@ function ZoraPage() {
         }
     }
 
-    // Llamar a la API para generar la animación según el signo solar del usuario
-    // Manejar el archivo multimedia y previsualizarlo
+    // Handle file selection and display a preview
     const handleFileChange = event => {
         const selectedFile = event.target.files[0]
         setFile(selectedFile)
@@ -60,12 +61,13 @@ function ZoraPage() {
         reader.readAsDataURL(selectedFile)
     }
 
+    // Generate animation based on the user's sun sign
     const handleGenerateAnimation = async () => {
         setIsGenerating(true)
         setErrorMessage(null)
 
         try {
-            // Obtener los datos astrológicos del usuario primero
+            // First, fetch user astrological data
             const astroData = await fetchUserAstroData()
 
             if (!astroData?.sun) {
@@ -74,8 +76,8 @@ function ZoraPage() {
                 return
             }
 
-            // Llamada a la API para generar la animación
-            const response = await fetch('/api/create-animation', {
+            // API call to generate the animation
+            const response = await fetch('/api/livepeer-image-to-video', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -87,8 +89,8 @@ function ZoraPage() {
 
             if (response.ok) {
                 const { videoUrl, imageUrl } = await response.json()
-                setGeneratedVideo(videoUrl) // Almacenar el video generado
-                setGeneratedImage(imageUrl) // Almacenar la imagen generada
+                setGeneratedVideo(videoUrl) // Store the generated video
+                setGeneratedImage(imageUrl) // Store the generated image
             } else {
                 setErrorMessage('Failed to generate animation.')
             }
@@ -98,24 +100,45 @@ function ZoraPage() {
             setIsGenerating(false)
         }
     }
+
+    // Set the contract ready to be minted
     const handleCreateContract = () => {
+        if (!name || !description || (!filePreview && !generatedImage)) {
+            setErrorMessage(
+                'Name, description, and image must be provided to create a contract.',
+            )
+            return
+        }
+
+        // Set as minting ready only when data is complete
         setIsMintingReady(true)
         setErrorMessage(null)
     }
 
-    const handleContractCreated = address => {
-        setContractAddress(address)
-        setIsMintingReady(true)
+    // Store the contract address after contract creation
+    const handleContractCreated = (address, txHash) => {
+        if (address) {
+            setContractAddress(address)
+            setIsMintingReady(true)
+            setTxHash(txHash) // Store transaction hash for explorer link
+        } else {
+            setErrorMessage('Failed to create contract. Please try again.')
+        }
+        setIsCreatingContract(false) // Set loading to false after contract creation
     }
 
+    // Confirm that the transaction was successful
     const handleTransactionConfirmed = () => {
         setIsTransactionConfirmed(true)
     }
 
+    // Handle transaction error
     const handleTransactionError = error => {
         setErrorMessage(`Transaction failed: ${error}`)
+        setIsCreatingContract(false) // Stop loading on error
     }
 
+    // Check if the token can be minted
     const handleMintTokenClick = () => {
         if (isTransactionConfirmed && contractAddress) {
             setShowMintToken(true)
@@ -140,10 +163,10 @@ function ZoraPage() {
                                 then mint it on Zora!
                             </p>
 
-                            {/* Cuadro para subir o generar imagen */}
+                            {/* Upload or generate image box */}
                             <div className="flex flex-col items-center w-full">
                                 <div className="max-w-lg w-full bg-white shadow-lg p-6 rounded-lg">
-                                    {/* Nombre */}
+                                    {/* Name input */}
                                     <div className="mb-6">
                                         <input
                                             type="text"
@@ -153,10 +176,11 @@ function ZoraPage() {
                                             }
                                             placeholder="name..."
                                             className="w-full py-2 px-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            required
                                         />
                                     </div>
 
-                                    {/* Descripción */}
+                                    {/* Description input */}
                                     <div className="mb-6">
                                         <textarea
                                             value={description}
@@ -165,26 +189,30 @@ function ZoraPage() {
                                             }
                                             placeholder="description..."
                                             className="w-full py-2 px-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            required
                                         />
                                     </div>
 
-                                    {/* Cuadro para subir o generar imagen */}
+                                    {/* File upload or generated image/video preview */}
                                     <div className="mb-6">
                                         <div
                                             className="relative border-2 border-dashed border-gray-300 rounded-lg text-center"
                                             style={{
-                                                height: generatedVideo
-                                                    ? 'auto'
-                                                    : '300px', // Ajusta el alto automáticamente si hay video
+                                                height:
+                                                    generatedVideo ||
+                                                    generatedImage ||
+                                                    filePreview
+                                                        ? 'auto'
+                                                        : '300px', // Ajusta la altura automáticamente si se genera un video o imagen
                                                 width: '100%',
                                             }}>
-                                            {/* Vista previa de la imagen o video generados */}
+                                            {/* Preview del video generado o la imagen */}
                                             {generatedVideo ? (
                                                 <video
                                                     src={generatedVideo}
                                                     controls
                                                     className="w-full h-auto rounded-md"
-                                                    style={{ zIndex: 10 }} // Elevar el video en el z-index
+                                                    style={{ zIndex: 10 }} // Coloca el video al frente
                                                 />
                                             ) : generatedImage ? (
                                                 <img
@@ -213,7 +241,7 @@ function ZoraPage() {
                                                 </div>
                                             )}
 
-                                            {/* Input para subir archivo: Mostrar solo si no hay video */}
+                                            {/* File input si no se ha generado un video */}
                                             {!generatedVideo && (
                                                 <input
                                                     type="file"
@@ -222,8 +250,8 @@ function ZoraPage() {
                                                 />
                                             )}
 
-                                            {/* Botón para generar animación, centrado visualmente */}
-                                            {!generatedVideo && ( // Ocultar el botón si el video está generado
+                                            {/* Botón para generar animación, oculto si ya se ha generado el video */}
+                                            {!generatedVideo && (
                                                 <div className="absolute inset-x-0 bottom-6 flex justify-center">
                                                     <button
                                                         onClick={
@@ -240,26 +268,30 @@ function ZoraPage() {
                                         </div>
                                     </div>
 
-                                    {/* Mostrar mensaje de error si ocurre */}
+                                    {/* Display error message if any */}
                                     {errorMessage && (
                                         <div className="mt-6 text-red-600">
                                             {errorMessage}
                                         </div>
                                     )}
 
-                                    {/* Botón para crear contrato */}
+                                    {/* Button to create contract */}
                                     <div className="w-full mt-6 flex justify-center">
                                         <button
-                                            onClick={handleCreateContract}
+                                            onClick={() => {
+                                                setIsCreatingContract(true)
+                                                handleCreateContract()
+                                            }}
                                             className="py-3 px-6 bg-gradient-to-r from-teal-500 to-blue-600 text-white rounded-md font-semibold shadow-md transform hover:scale-110 hover:shadow-xl transition-all duration-500 ease-in-out focus:outline-none focus:ring-4 focus:ring-blue-300">
-                                            Create Contract
+                                            {isCreatingContract
+                                                ? 'Creating Contract...'
+                                                : 'Create Contract'}
                                         </button>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Componente para crear contrato */}
-                            {isMintingReady && (
+                            {isMintingReady && !contractAddress && (
                                 <div className="w-full max-w-sm mt-6">
                                     <Create1155Contract
                                         onContractCreated={
@@ -271,22 +303,48 @@ function ZoraPage() {
                                         onTransactionError={
                                             handleTransactionError
                                         }
-                                        contractName={name} // Paso del nombre del contrato
-                                        contractDescription={description} // Paso de la descripción del contrato
-                                        contractImageUrl={generatedImage} // Paso de la URL de la imagen generada
-                                        contractVideoUrl={generatedVideo} // Paso de la URL del video generado
+                                        contractName={name} // Pass contract name
+                                        contractDescription={description} // Pass contract description
+                                        contractImageUrl={
+                                            filePreview || generatedImage
+                                        } // Pass file or generated image URL
+                                        contractVideoUrl={generatedVideo} // Pass generated video URL
                                     />
                                 </div>
                             )}
 
-                            {/* Mostrar mensaje de error si ocurre */}
+                            {/* Show contract details once it's created */}
+                            {contractAddress && (
+                                <div className="mt-6 text-gray-800">
+                                    <p>
+                                        Contract Address:{' '}
+                                        <span className="text-blue-500">
+                                            {contractAddress}
+                                        </span>
+                                    </p>
+                                    {txHash && (
+                                        <p>
+                                            Transaction Explorer:{' '}
+                                            <a
+                                                href={`https://explorer.zora.energy/tx/${txHash}`} // Adjust the explorer link as per your network
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-500 underline">
+                                                View on Explorer
+                                            </a>
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Display error message if any */}
                             {errorMessage && (
                                 <div className="mt-6 text-red-600">
                                     {errorMessage}
                                 </div>
                             )}
 
-                            {/* Botón para mintear el token */}
+                            {/* Button to mint token after transaction confirmation */}
                             {isTransactionConfirmed && contractAddress && (
                                 <div className="w-full max-w-sm mt-6">
                                     <button
@@ -297,7 +355,7 @@ function ZoraPage() {
                                 </div>
                             )}
 
-                            {/* Mostrar el componente MintToken si se cumple la condición */}
+                            {/* Show MintToken component if conditions are met */}
                             {showMintToken && (
                                 <div className="w-full max-w-sm mt-6">
                                     <MintToken

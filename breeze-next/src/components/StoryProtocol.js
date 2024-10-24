@@ -4,15 +4,16 @@ import Modal from 'react-modal'
 import { FaXTwitter } from 'react-icons/fa6'
 
 export default function StoryProtocol({ user }) {
-    const [isLoading, setIsLoading] = useState(false)
-    const [imageIsLoading, setImageIsLoading] = useState(false)
-    const [imageResponses, setImageResponses] = useState([]) // Array para almacenar las imágenes
-    const [nftData, setNftData] = useState(null) // Almacenar datos del NFT
-    const [userAstroData, setUserAstroData] = useState(null)
-    const [hasData, setHasData] = useState(true)
-    const [prompts, setPrompts] = useState([]) // Array para almacenar múltiples prompts
-    const [modalIsOpen, setModalIsOpen] = useState(false) // Estado del modal
+    const [isLoading, setIsLoading] = useState(false) // Loading state for image generation
+    const [imageIsLoading, setImageIsLoading] = useState(false) // Loading state for NFT creation
+    const [imageResponses, setImageResponses] = useState([]) // Array to store generated images
+    const [nftData, setNftData] = useState(null) // State to store NFT data
+    const [userAstroData, setUserAstroData] = useState(null) // State to store user's astrological data
+    const [hasData, setHasData] = useState(true) // Boolean to check if astrological data exists
+    const [prompts, setPrompts] = useState([]) // Array to store multiple prompts for image generation
+    const [modalIsOpen, setModalIsOpen] = useState(false) // State to handle modal open/close
 
+    // Fetch user's astrological data on component mount
     useEffect(() => {
         const fetchAstralPrompt = async () => {
             try {
@@ -31,6 +32,7 @@ export default function StoryProtocol({ user }) {
                         data.birth_place &&
                         data.sun
                     ) {
+                        // Store user astro data and create prompts based on sun sign
                         setUserAstroData({
                             name: user?.name,
                             birthDate: data.birth_date,
@@ -41,6 +43,7 @@ export default function StoryProtocol({ user }) {
                             ascendant: data.ascendant,
                         })
 
+                        // Generate multiple prompts based on the user's sun sign
                         const generatedPrompts = [
                             `A powerful and majestic representation of the ${data.sun} zodiac sign radiating power and creativity. Colors of the universe swirl around, set against a breathtaking landscape of swirling nebulas, vibrant planets, and distant galaxies.`,
                             `A futuristic, mythological representation of the zodiac sign ${data.sun}, blending ancient Greek astrology with advanced science fiction technology. The central figure embodies the spirit of ${data.sun}, adorned in glowing cosmic armor, surrounded by swirling galaxies, distant planets, and radiant constellations.`,
@@ -49,7 +52,7 @@ export default function StoryProtocol({ user }) {
                         ]
                         setPrompts(generatedPrompts)
                     } else {
-                        setHasData(false)
+                        setHasData(false) // If no astrological data, set data state to false
                     }
                 } else {
                     console.error('Failed to fetch user astro data')
@@ -59,21 +62,22 @@ export default function StoryProtocol({ user }) {
             }
         }
 
-        fetchAstralPrompt()
+        fetchAstralPrompt() // Invoke function to fetch user's astrological data
     }, [user])
 
+    // Function to handle image generation based on the prompts
     const handleGenerateImage = async () => {
-        if (prompts.length === 0) return
-        setIsLoading(true)
-        setImageResponses([]) // Limpiar imágenes previas
+        if (prompts.length === 0) return // Do nothing if there are no prompts
+        setIsLoading(true) // Set loading state for image generation
+        setImageResponses([]) // Clear previous images
 
         try {
-            const response = await fetch('/api/livepeer', {
+            const response = await fetch('/api/livepeer-text-to-image', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ prompts, userAstroData }),
+                body: JSON.stringify({ prompts, userAstroData }), // Send prompts and astrological data to the backend
             })
 
             if (!response.ok) {
@@ -82,6 +86,7 @@ export default function StoryProtocol({ user }) {
 
             const data = await response.json()
 
+            // Combine all image responses into one array
             const combinedImages = [
                 ...(data.images1 || []).map(img => img.url),
                 ...(data.images2 || []).map(img => img.url),
@@ -89,23 +94,24 @@ export default function StoryProtocol({ user }) {
                 ...(data.images4 || []).map(img => img.url),
             ]
 
-            setImageResponses(combinedImages) // Guardar todas las imágenes
+            setImageResponses(combinedImages) // Store generated images
         } catch (error) {
             console.error('Error generating images:', error)
         } finally {
-            setIsLoading(false)
+            setIsLoading(false) // Stop loading state
         }
     }
 
+    // Function to handle NFT creation
     const handleCreateNFT = async imageUrl => {
-        setImageIsLoading(true)
+        setImageIsLoading(true) // Set loading state for NFT creation
         try {
-            const response = await fetch('/api/create-nft', {
+            const response = await fetch('/api/story-protocol', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ imageUrl, userAstroData }),
+                body: JSON.stringify({ imageUrl, userAstroData }), // Send image URL and astrological data
             })
 
             if (!response.ok) {
@@ -114,17 +120,19 @@ export default function StoryProtocol({ user }) {
 
             const nftData = await response.json()
             setImageIsLoading(false)
-            setNftData(nftData) // Almacenar los datos del NFT en el estado
-            setModalIsOpen(true) // Abrir el modal con los detalles del NFT
+            setNftData(nftData) // Store NFT data in state
+            setModalIsOpen(true) // Open modal to display NFT details
         } catch (error) {
             console.error('Error creating NFT:', error)
         }
     }
 
+    // Function to close the modal
     const closeModal = () => {
         setModalIsOpen(false)
     }
 
+    // Function to handle sharing NFT on Twitter
     const handleShareOnX = () => {
         const tweetText = encodeURIComponent(
             `Check out this NFT created as an IP asset on Story Protocol: ${nftData.explorerUrl} #StoryProtocol`,
@@ -149,8 +157,8 @@ export default function StoryProtocol({ user }) {
                 the blockchain!
             </p>
             <button
-                onClick={handleGenerateImage}
-                disabled={isLoading || prompts.length === 0}
+                onClick={handleGenerateImage} // Trigger image generation
+                disabled={isLoading || prompts.length === 0} // Disable button if loading or no prompts
                 className="w-full max-w-sm py-4 px-6 mt-4 bg-gradient-to-r from-teal-500 to-blue-600 text-white rounded-md font-semibold shadow-md transform hover:scale-110 hover:shadow-xl transition-all duration-500 ease-in-out focus:outline-none focus:ring-4 focus:ring-blue-300">
                 {isLoading ? 'Generating...' : 'Generate Images'}
             </button>
@@ -162,21 +170,21 @@ export default function StoryProtocol({ user }) {
                             key={index}
                             className="relative bg-white shadow-xl rounded-lg overflow-hidden transform hover:scale-105 transition-all duration-500">
                             <img
-                                src={imageResponse}
+                                src={imageResponse} // Display generated image
                                 alt={`Generated Astral NFT ${index + 1}`}
                                 className="w-full h-auto"
                             />
                             <div className="absolute bottom-4 right-4 flex space-x-4">
-                                {/* Botón para crear NFT */}
+                                {/* Button to create NFT */}
                                 <button
-                                    onClick={() =>
-                                        handleCreateNFT(imageResponse)
+                                    onClick={
+                                        () => handleCreateNFT(imageResponse) // Trigger NFT creation
                                     }
                                     className="py-2 px-4 bg-gradient-to-r from-red-600 to-orange-600 text-white font-semibold rounded-md shadow-lg hover:bg-blue-700 transform hover:scale-110 transition-all duration-300"
                                     disabled={imageIsLoading}>
                                     Create NFT
                                 </button>
-                                {/* Botón para compartir en X */}
+                                {/* Button to share on X (Twitter) */}
                                 <a
                                     href={`https://twitter.com/intent/tweet?text=Check%20out%20this%20image%20generated%20by%20Livepeer%20AI!&url=${encodeURIComponent(imageResponse)}&hashtags=Livepeer,AI`}
                                     target="_blank"
@@ -190,7 +198,7 @@ export default function StoryProtocol({ user }) {
                 </div>
             )}
 
-            {/* Spinner mientras se carga la imagen */}
+            {/* Spinner while the image is loading */}
             {imageIsLoading && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
@@ -201,14 +209,14 @@ export default function StoryProtocol({ user }) {
             {nftData && (
                 <Modal
                     isOpen={modalIsOpen}
-                    onRequestClose={closeModal}
+                    onRequestClose={closeModal} // Close modal
                     className="fixed inset-0 z-50 grid place-items-center p-8 overflow-y-auto">
                     <div className="bg-white rounded-lg shadow-lg p-8 pt-8 max-w-4xl w-full mt-12">
                         <h2 className="text-2xl font-bold text-gray-800 mb-4">
                             NFT Details
                         </h2>
                         <img
-                            src={nftData.imageUrl}
+                            src={nftData.imageUrl} // Display generated NFT image
                             alt="Generated NFT"
                             className="w-full h-auto rounded-md shadow-md mb-4"
                         />
@@ -226,7 +234,7 @@ export default function StoryProtocol({ user }) {
                             <strong>IP Metadata URI</strong>
                             <br></br>
                             <a
-                                href={nftData.ipMetadataUri}
+                                href={nftData.ipMetadataUri} // Link to IP Metadata
                                 className="text-blue-600 hover:underline break-all"
                                 target="_blank">
                                 {nftData.ipMetadataUri}
@@ -237,7 +245,7 @@ export default function StoryProtocol({ user }) {
                             <strong>NFT Metadata URI</strong>
                             <br></br>
                             <a
-                                href={nftData.nftMetadataUri}
+                                href={nftData.nftMetadataUri} // Link to NFT Metadata
                                 className="text-blue-600 hover:underline"
                                 target="_blank">
                                 {nftData.nftMetadataUri}
@@ -248,13 +256,13 @@ export default function StoryProtocol({ user }) {
                             <strong>Explorer Link:</strong>
                             <br></br>
                             <a
-                                href={nftData.explorerUrl}
+                                href={nftData.explorerUrl} // Link to view NFT on blockchain explorer
                                 className="text-blue-600 hover:underline"
                                 target="_blank">
                                 View on Explorer
                             </a>
                         </p>
-                        {/* Botón para compartir en X */}
+                        {/* Button to close modal and share on X */}
                         <div className="flex justify-center mt-4 space-x-4">
                             <button
                                 onClick={closeModal}
@@ -262,7 +270,7 @@ export default function StoryProtocol({ user }) {
                                 Close
                             </button>
                             <button
-                                onClick={handleShareOnX}
+                                onClick={handleShareOnX} // Share NFT on X (Twitter)
                                 className="mt-6 py-2 px-4 bg-black text-white rounded-md shadow-lg hover:bg-gray-800 transition-all duration-300">
                                 <FaXTwitter className="text-xl" />
                             </button>

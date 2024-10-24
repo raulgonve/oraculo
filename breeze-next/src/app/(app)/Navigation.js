@@ -12,27 +12,30 @@ import { useState, useEffect } from 'react'
 import { useAccount, useEnsName } from 'wagmi'
 
 const Navigation = ({ user }) => {
-    const { logout } = useAuth()
-    const [open, setOpen] = useState(false)
-    const pathname = usePathname()
+    const { logout } = useAuth() // Hook for user logout
+    const [open, setOpen] = useState(false) // State for mobile menu
+    const pathname = usePathname() // Current URL path for setting active navigation link
 
+    // Wallet connection state
     const [isWalletConnected, setIsWalletConnected] = useState(false)
-    const [account, setAccount] = useState(null)
-    const [errorMessage, setErrorMessage] = useState('')
+    const [account, setAccount] = useState(null) // Stores connected account
+    const [errorMessage, setErrorMessage] = useState('') // Error messages
 
-    // Obtener la dirección de la cuenta conectada
+    // Get connected wallet address
     const { address } = useAccount()
-    // Obtener el ENS si existe para la dirección conectada
+    // Get ENS name for the connected address (if available)
     const { data: ensName } = useEnsName({ address })
 
-    // Función para conectar la billetera
+    // Function to connect user's wallet
     const connectWallet = async () => {
         if (typeof window !== 'undefined' && window.ethereum) {
             try {
+                // Request accounts from the Ethereum provider (e.g., MetaMask)
                 const accounts = await window.ethereum.request({
                     method: 'eth_requestAccounts',
                 })
 
+                // Set account if found
                 if (accounts && accounts.length > 0) {
                     setAccount(accounts[0])
                     setIsWalletConnected(true)
@@ -50,6 +53,7 @@ const Navigation = ({ user }) => {
         }
     }
 
+    // Effect to set account state when address is available
     useEffect(() => {
         if (address) {
             setAccount(address)
@@ -77,7 +81,7 @@ const Navigation = ({ user }) => {
                                 { href: '/astral', label: 'Astral Chart' },
                                 { href: '/astrobot', label: 'AstroBot' },
                                 { href: '/horoscope', label: 'Horoscope' },
-                                { href: '/nft', label: 'Astral NFT' },
+                                { href: '/storyprotocol', label: 'Astral NFT' },
                                 { href: '/zora', label: 'Zora' },
                                 { href: '/swarmzero', label: 'SwarmZero' },
                             ].map(link => (
@@ -101,6 +105,7 @@ const Navigation = ({ user }) => {
                                 trigger={
                                     <button className="flex items-center text-sm font-medium text-gray-500 hover:text-indigo-500 focus:outline-none transition duration-150 ease-in-out">
                                         <div>
+                                            {/* Show username or account ENS */}
                                             {user?.name}{' '}
                                             {ensName
                                                 ? `(${ensName})`
@@ -175,7 +180,7 @@ const Navigation = ({ user }) => {
                             { href: '/astral', label: 'Astral Chart' },
                             { href: '/astrobot', label: 'AstroBot' },
                             { href: '/horoscope', label: 'Horoscope' },
-                            { href: '/nft', label: 'Images' },
+                            { href: '/storyprotocol', label: 'Astral NFT' },
                             { href: '/zora', label: 'Zora' },
                             { href: '/swarmzero', label: 'SwarmZero' },
                         ].map(link => (

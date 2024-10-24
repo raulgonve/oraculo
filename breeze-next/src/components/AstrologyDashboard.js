@@ -24,10 +24,10 @@ import 'swiper/css/autoplay'
 import 'swiper/css/pagination'
 import 'swiper/css/navigation'
 
-// Importa los módulos correctamente
+// Import necessary Swiper modules
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
 
-// Rutas de las imágenes de los signos del zodiaco
+// Zodiac images paths
 const zodiacImages = [
     '/images/aquarius.png',
     '/images/aries.png',
@@ -44,21 +44,23 @@ const zodiacImages = [
 ]
 
 const AstrologyDashboard = () => {
+    // State to store astral elements, advanced elements, and aspects
     const [astralElements, setAstralElements] = useState([])
     const [advancedElements, setAdvancedElements] = useState([])
     const [aspects, setAspects] = useState([])
     const [loading, setLoading] = useState(true)
 
+    // Fetch astrological data when the component mounts
     useEffect(() => {
         const fetchAstrologyData = async () => {
             try {
-                // Obtener el token CSRF para realizar la solicitud de autenticación
+                // Get CSRF token for authentication
                 await fetch('http://localhost:8000/sanctum/csrf-cookie', {
                     method: 'GET',
                     credentials: 'include',
                 })
 
-                // Llamada para obtener los elementos
+                // Fetch astral elements
                 const elementsResponse = await fetch(
                     'http://localhost:8000/api/get-elements',
                     {
@@ -66,7 +68,7 @@ const AstrologyDashboard = () => {
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        mode: 'cors', // Permitir solicitudes CORS
+                        mode: 'cors', // Allow CORS requests
                         credentials: 'include',
                     },
                 )
@@ -77,7 +79,7 @@ const AstrologyDashboard = () => {
 
                 const elementsData = await elementsResponse.json()
 
-                // Separar los elementos en astral y avanzado
+                // Separate elements into astral and advanced types
                 const astrals = elementsData.filter(
                     element => element.element_type === 'Astral',
                 )
@@ -88,7 +90,7 @@ const AstrologyDashboard = () => {
                 setAstralElements(astrals)
                 setAdvancedElements(advanced)
 
-                // Llamada para obtener los aspectos
+                // Fetch aspects
                 const aspectsResponse = await fetch(
                     'http://localhost:8000/api/get-aspects',
                     {
@@ -96,7 +98,7 @@ const AstrologyDashboard = () => {
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        mode: 'cors', // Permitir solicitudes CORS
+                        mode: 'cors', // Allow CORS requests
                         credentials: 'include',
                     },
                 )
@@ -118,10 +120,12 @@ const AstrologyDashboard = () => {
         fetchAstrologyData()
     }, [])
 
+    // Show loading indicator while data is being fetched
     if (loading) {
         return <p className="text-center text-lg">Loading...</p>
     }
 
+    // Zodiac icons mapping
     const zodiacIcons = {
         Aries: <TbZodiacAries />,
         Taurus: <TbZodiacTaurus />,
@@ -137,6 +141,7 @@ const AstrologyDashboard = () => {
         Pisces: <TbZodiacPisces />,
     }
 
+    // Function to get random color classes for styling zodiac icons
     const getRandomColorClass = () => {
         const colors = [
             'text-red-500',
@@ -150,6 +155,7 @@ const AstrologyDashboard = () => {
         return colors[Math.floor(Math.random() * colors.length)]
     }
 
+    // Function to get zodiac icon based on element description
     const getZodiacIcon = description => {
         const sign = Object.keys(zodiacIcons).find(key =>
             description.toLowerCase().includes(key.toLowerCase()),
@@ -161,11 +167,12 @@ const AstrologyDashboard = () => {
         }
         return (
             <TbZodiacLibra
-                className={`${getRandomColorClass()} text-4xl`} // Default icon with random color
+                className={`${getRandomColorClass()} text-4xl`} // Default icon if no match found
             />
         )
     }
 
+    // Function to get random house numbers (for illustrative purposes)
     const getHouseNumber = () => {
         const houseNumbers = [
             '1st House',
@@ -183,6 +190,8 @@ const AstrologyDashboard = () => {
         ]
         return houseNumbers[Math.floor(Math.random() * houseNumbers.length)]
     }
+
+    // If no astral elements, display welcome message
     if (astralElements.length === 0) {
         return <p className="text-center text-lg">Welcome to Oraculo AI!</p>
     }
@@ -193,9 +202,7 @@ const AstrologyDashboard = () => {
                 Your Astrological Elements and Aspects
             </h1>
             <div className="w-full mx-auto mb-10">
-                {/* <h3 className="text-2xl font-semibold text-center text-gray-800 mb-4">
-                    Zodiac Signs
-                </h3> */}
+                {/* Zodiac sign images carousel */}
                 <Swiper
                     spaceBetween={20}
                     slidesPerView={5}
@@ -217,7 +224,7 @@ const AstrologyDashboard = () => {
                 </Swiper>
             </div>
 
-            {/* Title for Astral Elements Section */}
+            {/* Astral Elements Section */}
             <h2 className="text-3xl font-bold text-gray-700 mt-8 mb-4 border-b-2 border-gray-300 pb-2">
                 Your Astrological Elements
             </h2>
@@ -249,7 +256,7 @@ const AstrologyDashboard = () => {
                 ))}
             </div>
 
-            {/* Title for Advanced Elements Section */}
+            {/* Advanced Elements Section */}
             <h2 className="text-3xl font-bold text-gray-700 mt-12 mb-4 border-b-2 border-gray-300 pb-2">
                 Your Advanced Elements
             </h2>
@@ -281,7 +288,7 @@ const AstrologyDashboard = () => {
                 ))}
             </div>
 
-            {/* Title for Aspects Section */}
+            {/* Astrological Aspects Section */}
             <h2 className="text-3xl font-bold text-gray-700 mt-12 mb-4 border-b-2 border-gray-300 pb-2">
                 Your Astrological Aspects
             </h2>

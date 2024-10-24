@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { FaSun, FaMoon, FaArrowUp } from 'react-icons/fa' // Importar iconos para representar los signos
+import { FaSun, FaMoon, FaArrowUp } from 'react-icons/fa' // Icons for astrological signs
 import {
     IoCalendarOutline,
     IoLocationOutline,
@@ -9,21 +9,21 @@ import {
 import Link from 'next/link'
 
 export default function HoroscopeGenerator({ user }) {
-    const [userAstroData, setUserAstroData] = useState(null)
-    const [horoscope, setHoroscope] = useState('')
-    const [isLoading, setIsLoading] = useState(false)
-    const [hasData, setHasData] = useState(true)
+    const [userAstroData, setUserAstroData] = useState(null) // Holds user's astrological data
+    const [horoscope, setHoroscope] = useState('') // The horoscope result
+    const [isLoading, setIsLoading] = useState(false) // Loading state for fetching the horoscope
+    const [hasData, setHasData] = useState(true) // Indicates if user's astrological data is present
 
+    // Fetch the user's astrological data from the backend when the component mounts
     useEffect(() => {
-        // Fetch data from Laravel API when the component mounts
         const fetchUserAstroData = async () => {
             try {
                 const response = await fetch(
                     `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/horoscope-data`,
                     {
                         method: 'GET',
-                        credentials: 'include',
-                    }, // Asegúrate de enviar las cookies de sesión
+                        credentials: 'include', // Include session cookies
+                    },
                 )
                 if (response.ok) {
                     const data = await response.json()
@@ -42,7 +42,7 @@ export default function HoroscopeGenerator({ user }) {
                             ascendant: data.ascendant,
                         })
                     } else {
-                        setHasData(false)
+                        setHasData(false) // User data is incomplete
                     }
                 } else {
                     console.error('Failed to fetch user astro data')
@@ -55,6 +55,7 @@ export default function HoroscopeGenerator({ user }) {
         fetchUserAstroData()
     }, [])
 
+    // Fetch CSRF token for secure communication
     const fetchCsrfToken = async () => {
         await fetch(
             `${process.env.NEXT_PUBLIC_BACKEND_URL}/sanctum/csrf-cookie`,
@@ -65,10 +66,11 @@ export default function HoroscopeGenerator({ user }) {
         )
     }
 
+    // Handles the action to generate the horoscope using the user’s astrological data
     const handleGenerateHoroscope = async () => {
         if (!userAstroData) return
         setIsLoading(true)
-        setHoroscope('') // Limpiar el horóscopo anterior
+        setHoroscope('') // Clear previous horoscope
 
         try {
             const response = await fetch(`/api/horoscope`, {
@@ -84,14 +86,13 @@ export default function HoroscopeGenerator({ user }) {
                 const decoder = new TextDecoder()
                 let result = ''
 
-                // Leer el stream
+                // Read the streaming response
                 while (true) {
                     const { done, value } = await reader.read()
                     if (done) break
-                    // Decodificar el fragmento recibido
+
                     result += decoder.decode(value)
-                    // Actualizar el estado para mostrar el horóscopo a medida que se recibe
-                    setHoroscope(prev => prev + decoder.decode(value))
+                    setHoroscope(prev => prev + decoder.decode(value)) // Append the result to the horoscope state
                 }
             } else {
                 console.error('Failed to generate horoscope: No response body')
@@ -102,6 +103,8 @@ export default function HoroscopeGenerator({ user }) {
             setIsLoading(false)
         }
     }
+
+    // Display a message if the user's astrological data is missing
     if (!hasData) {
         return (
             <div className="flex flex-col items-center p-8 w-[90%] max-w-5xl mx-auto">
@@ -121,6 +124,7 @@ export default function HoroscopeGenerator({ user }) {
         )
     }
 
+    // Main render with user astrological data and horoscope generation
     return (
         <div className="flex flex-col items-center p-8 w-[90%] max-w-5xl mx-auto ">
             <h2 className="text-4xl font-bold text-center text-gray-800 mb-2">
@@ -133,7 +137,7 @@ export default function HoroscopeGenerator({ user }) {
 
             {userAstroData && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full mb-8">
-                    {/* Card 1: Fecha, Hora y Lugar de Nacimiento */}
+                    {/* Card 1: Birth Details */}
                     <div className="p-6 border border-gray-200 rounded-2xl bg-white shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-500">
                         <h3 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center border-b-2 border-gray-300">
                             Birth Details
@@ -161,7 +165,7 @@ export default function HoroscopeGenerator({ user }) {
                         </p>
                     </div>
 
-                    {/* Card 2: Signos Astrológicos */}
+                    {/* Card 2: Astrological Signs */}
                     <div className="p-6 border border-gray-200 rounded-2xl bg-white shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-500">
                         <h3 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center border-b-2 border-gray-300">
                             Astrological Signs
@@ -191,7 +195,7 @@ export default function HoroscopeGenerator({ user }) {
                 </div>
             )}
 
-            {/* Botón para Generar el Horóscopo */}
+            {/* Button to Generate Horoscope */}
             <button
                 onClick={handleGenerateHoroscope}
                 disabled={isLoading}
@@ -199,7 +203,7 @@ export default function HoroscopeGenerator({ user }) {
                 {isLoading ? 'Generating...' : 'Generate Horoscope'}
             </button>
 
-            {/* Mostrar el Horóscopo */}
+            {/* Show the Horoscope */}
             {horoscope && (
                 <div className="w-full mt-8 p-6 border border-gray-200 rounded-2xl bg-white shadow-lg hover:shadow-2xl  transform hover:scale-105 transition-all duration-500">
                     <h3 className="text-2xl font-semibold text-gray-800 mb-4">
@@ -207,7 +211,7 @@ export default function HoroscopeGenerator({ user }) {
                     </h3>
                     <div
                         className="text-lg text-gray-700"
-                        dangerouslySetInnerHTML={{ __html: horoscope }} // Renderizar el HTML de la respuesta
+                        dangerouslySetInnerHTML={{ __html: horoscope }} // Render the horoscope with HTML
                     ></div>
                 </div>
             )}
@@ -220,10 +224,10 @@ function getCookie(name) {
     const value = `; ${document.cookie}`
     const parts = value.split(`; ${name}=`)
     if (parts.length === 2) {
-        const lastPart = parts.pop() // Puede ser undefined
+        const lastPart = parts.pop() // Can be undefined
         if (lastPart) {
             return lastPart.split(';').shift() || ''
         }
     }
-    return '' // Retornar una cadena vacía si la cookie no está presente
+    return '' // Return empty string if cookie not found
 }
