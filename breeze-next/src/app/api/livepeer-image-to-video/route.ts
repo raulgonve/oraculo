@@ -86,6 +86,13 @@ export async function POST(req: Request) {
         formData.append('image', fs.createReadStream(imagePath)) // Imagen descargada
         formData.append('width', '1024') // Especificar el ancho del video
         formData.append('height', '1024') // Especificar el alto del video
+        // Opciones avanzadas
+        // formData.append('fps', '24') // Frames por segundo del video generado
+        formData.append('motion_bucket_id', '6') // Cantidad de movimiento (valores más altos = más movimiento)
+        formData.append('noise_aug_strength', '0.5') // Nivel de ruido agregado, aumenta el movimiento y reduce la similitud con la imagen original
+        formData.append('safety_check', 'true') // Activar chequeo de seguridad para filtrar contenido dañino
+        // formData.append('seed', '42') // Semilla para reproducibilidad
+        formData.append('num_inference_steps', '50') // Número de pasos de inferencia
 
         const videoResponse = await fetch(
             'https://dream-gateway.livepeer.cloud/image-to-video',
